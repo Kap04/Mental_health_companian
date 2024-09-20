@@ -57,7 +57,7 @@ The project requires environment variables (such as API keys) to work properly.
 2. Add the following environment variables to the file:
 
    ```bash
-   GEMINI_API_KEY=(API key is in whatsapp group description)
+   NEXT_PUBLIC_GEMINI_API_KEY=(API key is in whatsapp group description)
    ```
 
    GEMINI_API_KEY is the key to accessing the gemini AI
