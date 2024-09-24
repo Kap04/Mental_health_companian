@@ -14,8 +14,8 @@ const geistMono = localFont({
 });
 
 export const metadata: Metadata = {
-  title: "Mental Health Companian",
-  description: "assists you with your mental health.",
+  title: "Mental Health Companion",
+  description: "Assists you with your mental health.",
 };
 
 export default function RootLayout({

@@ -1,5 +1,6 @@
 import React from 'react';
 import { ChevronRight } from 'lucide-react';
+import AuthForm from './_component/AuthForm';
 
 const LandingPage = () => {
   return (
@@ -30,9 +31,11 @@ const LandingPage = () => {
           Our AI-powered chatbot offers a safe space for you to express yourself and find the help you need.
         </p>
 
+        <AuthForm />
+
         <a 
           href="/chatpage" 
-          className="inline-flex items-center bg-white text-black px-6 py-3 rounded-full text-lg font-semibold hover:bg-[#F5B5C2] transition duration-300"
+          className="inline-flex items-center bg-white text-black px-6 py-3 rounded-full text-lg font-semibold hover:bg-[#F5B5C2] transition duration-300 mt-8"
         >
           Start Chatting Now
           <ChevronRight className="ml-2" />

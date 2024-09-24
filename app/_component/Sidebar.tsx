@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 
+interface ChatSidebarProps {
+  chatHistory: any[];
+}
 
-const ChatSidebar = () => {
+const ChatSidebar: React.FC<ChatSidebarProps> = ({ chatHistory }) => {
   const [isHovered, setIsHovered] = useState(false);
 
   return (
@@ -17,9 +20,11 @@ const ChatSidebar = () => {
         <div className="h-full flex flex-col">
           <h2 className="text-xl font-bold mb-4">Chat History</h2>
           <ul className="space-y-2 flex-grow">
-            <li className="cursor-pointer hover:bg-[#F5B5C2] p-2 rounded transition duration-150 ease-in-out">Previous Session 1</li>
-            <li className="cursor-pointer hover:bg-[#F5B5C2] p-2 rounded transition duration-150 ease-in-out">Previous Session 2</li>
-            <li className="cursor-pointer hover:bg-[#F5B5C2] p-2 rounded transition duration-150 ease-in-out">Previous Session 3</li>
+            {chatHistory.map((chat, index) => (
+              <li key={chat.id} className="cursor-pointer hover:bg-[#F5B5C2] p-2 rounded transition duration-150 ease-in-out">
+                Chat Session {index + 1}
+              </li>
+            ))}
           </ul>
         </div>
       </div>
