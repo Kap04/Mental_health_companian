@@ -1,7 +1,7 @@
-"use client";
-import React, { useEffect, useState } from 'react';
+"use client"
+import React, { useEffect, useState, useRef } from 'react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { BotIcon, Send } from 'lucide-react';
+import { Send } from 'lucide-react';
 import { auth } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { addDoc, collection, query, orderBy, onSnapshot, getDocs } from 'firebase/firestore';
@@ -12,7 +12,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 
 const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
 const genAI = new GoogleGenerativeAI(apiKey);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"  });  // "models/gemini-001"
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 const ChatPage: React.FC = () => {
     const [input, setInput] = useState('');
@@ -20,8 +20,9 @@ const ChatPage: React.FC = () => {
     const [user, setUser] = useState<any>(null);
     const [responseCount, setResponseCount] = useState(0);
     const [error, setError] = useState('');
-    const [isLoading, setIsLoading] = useState(false); // Used to manage loading state
+    const [isLoading, setIsLoading] = useState(false);
     const [chatHistory, setChatHistory] = useState<any[]>([]);
+    const messagesEndRef = useRef<null | HTMLDivElement>(null);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -33,6 +34,14 @@ const ChatPage: React.FC = () => {
         });
         return () => unsubscribe();
     }, []);
+
+    useEffect(() => {
+        scrollToBottom();
+    }, [messages]);
+
+    const scrollToBottom = () => {
+        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    };
 
     const loadChatHistory = (userId: string) => {
         const q = query(collection(db, 'chatHistory', userId, 'messages'), orderBy('timestamp'));
@@ -69,7 +78,7 @@ const ChatPage: React.FC = () => {
                 setResponseCount(prevCount => prevCount + 1);
             }
 
-            setIsLoading(true); // Set loading to true
+            setIsLoading(true);
             try {
                 const result = await model.generateContent(input);
                 const botMessage = {
@@ -88,7 +97,7 @@ const ChatPage: React.FC = () => {
                     { role: 'assistant', content: 'Sorry, something went wrong.', timestamp: new Date() },
                 ]);
             } finally {
-                setIsLoading(false); 
+                setIsLoading(false);
             }
         } else {
             setError('Message limit reached. Please sign in to continue.');
@@ -124,16 +133,15 @@ const ChatPage: React.FC = () => {
                         </div>
                     ))}
 
-                    {/* Show Skeleton while waiting for AI response */}
                     {isLoading && (
                         <div className="flex justify-start">
                             <div className="max-w-xl">
-                                {/* Skeleton loader for the AI response */}
                                 <Skeleton className="h-6 w-[200px] rounded-lg" />
                                 <Skeleton className="h-4 w-[150px] rounded-lg mt-2" />
                             </div>
                         </div>
                     )}
+                    <div ref={messagesEndRef} />
                 </div>
 
                 <div className="w-full max-w-3xl pb-6 px-4">
