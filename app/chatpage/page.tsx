@@ -1,16 +1,18 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
-import { Send } from 'lucide-react';
+import { BotIcon, Send } from 'lucide-react';
 import { auth } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { addDoc, collection, query, orderBy, onSnapshot, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
 import ChatSidebar from '../_component/Sidebar';
+import Markdown from 'react-markdown';
+import { Skeleton } from '@/components/ui/skeleton'; 
 
 const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
 const genAI = new GoogleGenerativeAI(apiKey);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash"  });  // "models/gemini-001"
 
 const ChatPage: React.FC = () => {
     const [input, setInput] = useState('');
@@ -18,7 +20,7 @@ const ChatPage: React.FC = () => {
     const [user, setUser] = useState<any>(null);
     const [responseCount, setResponseCount] = useState(0);
     const [error, setError] = useState('');
-    const [isLoading, setIsLoading] = useState(false);
+    const [isLoading, setIsLoading] = useState(false); // Used to manage loading state
     const [chatHistory, setChatHistory] = useState<any[]>([]);
 
     useEffect(() => {
@@ -67,7 +69,7 @@ const ChatPage: React.FC = () => {
                 setResponseCount(prevCount => prevCount + 1);
             }
 
-            setIsLoading(true);
+            setIsLoading(true); // Set loading to true
             try {
                 const result = await model.generateContent(input);
                 const botMessage = {
@@ -86,7 +88,7 @@ const ChatPage: React.FC = () => {
                     { role: 'assistant', content: 'Sorry, something went wrong.', timestamp: new Date() },
                 ]);
             } finally {
-                setIsLoading(false);
+                setIsLoading(false); 
             }
         } else {
             setError('Message limit reached. Please sign in to continue.');
@@ -100,7 +102,7 @@ const ChatPage: React.FC = () => {
     };
 
     return (
-        <div className="flex h-screen bg-gradient-to-b from-[#F5B5C2] via-[#E6D7FF] to-[#E0F7FA]">
+        <div className="flex h-screen bg-gradient-to-b from-[#e0eafc] to-[#cfdef3]">
             <ChatSidebar chatHistory={chatHistory} />
 
             <div className="flex-1 flex flex-col items-center">
@@ -113,14 +115,25 @@ const ChatPage: React.FC = () => {
                             <div
                                 className={`max-w-xl px-4 py-2 rounded-lg ${
                                     msg.role === 'user'
-                                        ? 'bg-[#E0F7FA] text-black'
+                                        ? 'bg-white text-black'
                                         : 'bg-white text-black shadow-md'
                                 }`}
                             >
-                                {msg.content}
+                                <Markdown>{msg.content}</Markdown>
                             </div>
                         </div>
                     ))}
+
+                    {/* Show Skeleton while waiting for AI response */}
+                    {isLoading && (
+                        <div className="flex justify-start">
+                            <div className="max-w-xl">
+                                {/* Skeleton loader for the AI response */}
+                                <Skeleton className="h-6 w-[200px] rounded-lg" />
+                                <Skeleton className="h-4 w-[150px] rounded-lg mt-2" />
+                            </div>
+                        </div>
+                    )}
                 </div>
 
                 <div className="w-full max-w-3xl pb-6 px-4">
@@ -135,7 +148,7 @@ const ChatPage: React.FC = () => {
                         />
                         <button
                             onClick={handleSend}
-                            className="absolute right-2 top-1/2 transform -translate-y-1/2 inline-flex items-center justify-center rounded-full p-2 transition duration-500 ease-in-out text-white bg-[#F5B5C2] hover:bg-[#E6D7FF] focus:outline-none"
+                            className="absolute right-2 top-1/2 transform -translate-y-1/2 inline-flex items-center justify-center rounded-full p-2 transition duration-500 ease-in-out text-white bg-[rgb(153,186,246)] hover:bg-[#E6D7FF] focus:outline-none"
                         >
                             <Send size={20} />
                         </button>

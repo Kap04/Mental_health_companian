@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { ChevronRight } from 'lucide-react';
+import Markdown from 'react-markdown';
 
 interface ChatSidebarProps {
   chatHistory: any[];
@@ -11,7 +12,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ chatHistory }) => {
   return (
     <div className="relative h-full">
       <div
-        className={`fixed top-0 left-0 h-full w-64 bg-black bg-opacity-50 text-white p-4 overflow-y-auto transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 left-0 h-full w-64 bg-gray-800 bg-opacity-80 text-white p-4 overflow-y-auto transition-transform duration-300 ease-in-out ${
           isHovered ? 'translate-x-0' : '-translate-x-64'
         }`}
         onMouseEnter={() => setIsHovered(true)}
@@ -35,8 +36,8 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ chatHistory }) => {
         onMouseEnter={() => setIsHovered(true)}
       >
         <ChevronRight 
-          size={24} 
-          className="text-[#F5B5C2] cursor-pointer hover:text-[#E6D7FF]"
+          size={40} 
+          className="text-gray-500 cursor-pointer hover:text-[#E6D7FF]"
         />
       </div>
     </div>

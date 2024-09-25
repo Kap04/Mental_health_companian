@@ -31,7 +31,7 @@ const LandingPage = () => {
           Our AI-powered chatbot offers a safe space for you to express yourself and find the help you need.
         </p>
 
-        <AuthForm />
+        {/* <AuthForm /> */}
 
         <a 
           href="/chatpage" 
