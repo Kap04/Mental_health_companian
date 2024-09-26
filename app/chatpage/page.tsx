@@ -1,5 +1,5 @@
-"use client"
-import React, { useEffect, useState, useRef } from 'react';
+"use client";
+import React, { useEffect, useState } from 'react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Send } from 'lucide-react';
 import { auth } from '../../firebase';
@@ -8,13 +8,12 @@ import { addDoc, collection, query, orderBy, onSnapshot, getDocs } from 'firebas
 import { db } from '../../firebase';
 import ChatSidebar from '../../components/Sidebar';
 import Markdown from 'react-markdown';
-import { Skeleton } from '@/components/ui/skeleton'; 
-import Image from 'next/image';
-import  BotIcon  from '../../components/assets/bot_icon.png'
+import { Skeleton } from '@/components/ui/skeleton';
+import VoiceInput from '../_component/VoiceInput';
 
 const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
 const genAI = new GoogleGenerativeAI(apiKey);
-const model = genAI.getGenerativeModel({ model: "tunedModels/mentalhealthbotreal-j61lbjfdj54k" });
+const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
 const ChatPage: React.FC = () => {
     const [input, setInput] = useState('');
@@ -24,7 +23,6 @@ const ChatPage: React.FC = () => {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [chatHistory, setChatHistory] = useState<any[]>([]);
-    const messagesEndRef = useRef<null | HTMLDivElement>(null);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -36,14 +34,6 @@ const ChatPage: React.FC = () => {
         });
         return () => unsubscribe();
     }, []);
-
-    useEffect(() => {
-        scrollToBottom();
-    }, [messages]);
-
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    };
 
     const loadChatHistory = (userId: string) => {
         const q = query(collection(db, 'chatHistory', userId, 'messages'), orderBy('timestamp'));
@@ -92,6 +82,7 @@ const ChatPage: React.FC = () => {
                 if (user) {
                     await addDoc(collection(db, 'chatHistory', user.uid, 'messages'), botMessage);
                 }
+                speakResponse(botMessage.content);
             } catch (error) {
                 console.error('Error generating content:', error);
                 setMessages((prev) => [
@@ -99,7 +90,7 @@ const ChatPage: React.FC = () => {
                     { role: 'assistant', content: 'Sorry, something went wrong.', timestamp: new Date() },
                 ]);
             } finally {
-                setIsLoading(false);
+                setIsLoading(false); 
             }
         } else {
             setError('Message limit reached. Please sign in to continue.');
@@ -112,50 +103,21 @@ const ChatPage: React.FC = () => {
         }
     };
 
+    const handleVoiceInput = (transcript: string) => {
+        setInput(transcript);
+    };
+
+    const speakResponse = (text: string) => {
+        const utterance = new SpeechSynthesisUtterance(text);
+        window.speechSynthesis.speak(utterance);
+    };
+
     return (
         <div className="flex h-screen bg-gradient-to-b from-[#e0eafc] to-[#cfdef3]">
             <ChatSidebar chatHistory={chatHistory} />
 
             <div className="flex-1 flex flex-col items-center">
                 <div className="w-full max-w-3xl flex-1 overflow-y-auto p-6 space-y-4">
-                {messages.map((msg, index) => (
-                    <div
-                        key={index}
-                        className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start items-start'}`}
-                    >
-                        {msg.role !== 'user' && (
-                            <div className="mr-4">
-                                <Image
-                                    className='text-white'
-                                    src={BotIcon}
-                                    alt="Bot Icon"
-                                    width={40} // Set your desired width
-                                    height={40} // Set your desired height
-                                />
-                            </div>
-                        )}
-                        <div
-                            className={`max-w-xl px-4 py-2 rounded-lg ${
-                                msg.role === 'user' ? 'bg-white text-black' : 'bg-white text-black shadow-md'
-                            }`}
-                        >
-                            <Markdown>{msg.content}</Markdown>
-                        </div>
-                    </div>
-                ))}
-
-                {isLoading && (
-                    <div className="flex justify-start">
-                        <div className="max-w-xl">
-                            <Skeleton className="h-6 w-[200px] rounded-lg" />
-                            <Skeleton className="h-4 w-[150px] rounded-lg mt-2" />
-                        </div>
-                    </div>
-                )}
-                <div ref={messagesEndRef} />
-                </div>
-
-                {/* <div className="w-full max-w-3xl flex-1 overflow-y-auto p-6 space-y-4">
                     {messages.map((msg, index) => (
                         <div
                             key={index}
@@ -181,8 +143,7 @@ const ChatPage: React.FC = () => {
                             </div>
                         </div>
                     )}
-                    <div ref={messagesEndRef} />
-                </div> */}
+                </div>
 
                 <div className="w-full max-w-3xl pb-6 px-4">
                     <div className="relative">
@@ -192,8 +153,9 @@ const ChatPage: React.FC = () => {
                             onChange={(e) => setInput(e.target.value)}
                             onKeyPress={handleKeyPress}
                             placeholder="Type your message here..."
-                            className="w-full focus:outline-none focus:placeholder-gray-400 text-black placeholder-gray-500 pl-4 pr-12 py-3 rounded-full bg-white shadow-md"
+                            className="w-full focus:outline-none focus:placeholder-gray-400 text-black placeholder-gray-500 pl-4 pr-20 py-3 rounded-full bg-white shadow-md"
                         />
+                        <VoiceInput onTranscript={handleVoiceInput} />
                         <button
                             onClick={handleSend}
                             className="absolute right-2 top-1/2 transform -translate-y-1/2 inline-flex items-center justify-center rounded-full p-2 transition duration-500 ease-in-out text-white bg-[rgb(153,186,246)] hover:bg-[#E6D7FF] focus:outline-none"
