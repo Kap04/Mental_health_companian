@@ -6,9 +6,11 @@ import { auth } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { addDoc, collection, query, orderBy, onSnapshot, getDocs } from 'firebase/firestore';
 import { db } from '../../firebase';
-import ChatSidebar from '../_component/Sidebar';
+import ChatSidebar from '../../components/Sidebar';
 import Markdown from 'react-markdown';
 import { Skeleton } from '@/components/ui/skeleton'; 
+import Image from 'next/image';
+import  BotIcon  from '../../components/assets/bot_icon.png'
 
 const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
 const genAI = new GoogleGenerativeAI(apiKey);
@@ -116,6 +118,44 @@ const ChatPage: React.FC = () => {
 
             <div className="flex-1 flex flex-col items-center">
                 <div className="w-full max-w-3xl flex-1 overflow-y-auto p-6 space-y-4">
+                {messages.map((msg, index) => (
+                    <div
+                        key={index}
+                        className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start items-start'}`}
+                    >
+                        {msg.role !== 'user' && (
+                            <div className="mr-4">
+                                <Image
+                                    className='text-white'
+                                    src={BotIcon}
+                                    alt="Bot Icon"
+                                    width={40} // Set your desired width
+                                    height={40} // Set your desired height
+                                />
+                            </div>
+                        )}
+                        <div
+                            className={`max-w-xl px-4 py-2 rounded-lg ${
+                                msg.role === 'user' ? 'bg-white text-black' : 'bg-white text-black shadow-md'
+                            }`}
+                        >
+                            <Markdown>{msg.content}</Markdown>
+                        </div>
+                    </div>
+                ))}
+
+                {isLoading && (
+                    <div className="flex justify-start">
+                        <div className="max-w-xl">
+                            <Skeleton className="h-6 w-[200px] rounded-lg" />
+                            <Skeleton className="h-4 w-[150px] rounded-lg mt-2" />
+                        </div>
+                    </div>
+                )}
+                <div ref={messagesEndRef} />
+                </div>
+
+                {/* <div className="w-full max-w-3xl flex-1 overflow-y-auto p-6 space-y-4">
                     {messages.map((msg, index) => (
                         <div
                             key={index}
@@ -142,7 +182,7 @@ const ChatPage: React.FC = () => {
                         </div>
                     )}
                     <div ref={messagesEndRef} />
-                </div>
+                </div> */}
 
                 <div className="w-full max-w-3xl pb-6 px-4">
                     <div className="relative">
