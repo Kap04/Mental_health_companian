@@ -12,7 +12,7 @@ import VoiceInput from '../_component/VoiceInput';
 
 const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
 const genAI = new GoogleGenerativeAI(apiKey);
-const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
+const model = genAI.getGenerativeModel({ model: "tunedModels/mentalhealthbotreal-j61lbjfdj54k" });
 
 const ChatPage: React.FC = () => {
     const [input, setInput] = useState('');
