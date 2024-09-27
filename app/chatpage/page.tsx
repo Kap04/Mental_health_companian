@@ -24,6 +24,23 @@ const ChatPage: React.FC = () => {
     const [isLoading, setIsLoading] = useState(false);
     const [chatHistory, setChatHistory] = useState<any[]>([]);
 
+    const [isClient, setIsClient] = useState(false);
+
+    useEffect(() => {
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+            setUser(currentUser);
+            if (currentUser) {
+                try {
+                    await loadChatHistory(currentUser.uid);
+                    await loadPreviousChats(currentUser.uid);
+                } catch (error) {
+                    console.error("Error loading chat history:", error);
+                }
+            }
+        });
+        return () => unsubscribe();
+    }, []);
+    
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
             setUser(currentUser);
@@ -146,7 +163,7 @@ const ChatPage: React.FC = () => {
                 </div>
 
                 <div className="w-full max-w-3xl pb-6 px-4">
-                    <div className="relative">
+                    {/* <div className="relative">
                         <input
                             type="text"
                             value={input}
@@ -162,7 +179,33 @@ const ChatPage: React.FC = () => {
                         >
                             <Send size={20} />
                         </button>
+                    </div> */}
+                    <div className="relative">
+                        <input
+                            type="text"
+                            value={input}
+                            onChange={(e) => setInput(e.target.value)}
+                            onKeyPress={handleKeyPress}
+                            placeholder="Type your message here..."
+                            className="w-full focus:outline-none focus:placeholder-gray-400 text-black placeholder-gray-500 pl-4 pr-20 py-3 rounded-full bg-white shadow-md"
+                        />
+                        <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
+                            <div
+                                className="inline-flex items-center justify-center rounded-full p-2 transition duration-500 ease-in-out text-white  focus:outline-none"
+                            >
+                                <VoiceInput onTranscript={handleVoiceInput} /> {/* Replace with your actual mic icon component */}
+                            </div>
+                            <button
+                                onClick={handleSend}
+                                className="inline-flex items-center justify-center rounded-full p-2 transition duration-500 ease-in-out text-white bg-[rgb(153,186,246)] hover:bg-[#E6D7FF] focus:outline-none"
+                            >
+                                <Send size={20} />
+                            </button>
+                        </div>
                     </div>
+
+                   
+
                 </div>
 
                 {error && <p className="text-red-500">{error}</p>}
