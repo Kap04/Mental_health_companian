@@ -12,7 +12,7 @@ import VoiceInput from '../_component/VoiceInput';
 
 const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
 const genAI = new GoogleGenerativeAI(apiKey);
-const model = genAI.getGenerativeModel({ model: "tunedModels/mentalhealthbotreal-j61lbjfdj54k" });
+const model = genAI.getGenerativeModel({ model: "tunedModels/mental-health-companian-okvhy316xzy2" });
 
 const ChatPage: React.FC = () => {
     const [input, setInput] = useState('');
@@ -133,7 +133,7 @@ const ChatPage: React.FC = () => {
     };
 
     return (
-        <div className="flex h-screen bg-gradient-to-b from-[#e0eafc] to-[#cfdef3]">
+        <div className="flex h-screen bg-gradient-to-b from-blue-100 to-purple-100">
             <ChatSidebar chatHistory={chatHistory} />
 
             <div className="flex-1 flex flex-col items-center">
@@ -166,23 +166,6 @@ const ChatPage: React.FC = () => {
                 </div>
 
                 <div className="w-full max-w-3xl pb-6 px-4">
-                    {/* <div className="relative">
-                        <input
-                            type="text"
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            onKeyPress={handleKeyPress}
-                            placeholder="Type your message here..."
-                            className="w-full focus:outline-none focus:placeholder-gray-400 text-black placeholder-gray-500 pl-4 pr-20 py-3 rounded-full bg-white shadow-md"
-                        />
-                        <VoiceInput onTranscript={handleVoiceInput} />
-                        <button
-                            onClick={handleSend}
-                            className="absolute right-2 top-1/2 transform -translate-y-1/2 inline-flex items-center justify-center rounded-full p-2 transition duration-500 ease-in-out text-white bg-[rgb(153,186,246)] hover:bg-[#E6D7FF] focus:outline-none"
-                        >
-                            <Send size={20} />
-                        </button>
-                    </div> */}
                     <div className="relative">
                         <input
                             type="text"
@@ -194,9 +177,9 @@ const ChatPage: React.FC = () => {
                         />
                         <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
                             <div
-                                className="inline-flex items-center justify-center rounded-full p-2 transition duration-500 ease-in-out text-white  focus:outline-none"
+                                className="inline-flex items-center justify-center rounded-full p-2 transition duration-500 ease-in-out text-white focus:outline-none"
                             >
-                                <VoiceInput onTranscript={handleVoiceInput} /> {/* Replace with your actual mic icon component */}
+                                <VoiceInput onTranscript={handleVoiceInput} />
                             </div>
                             <button
                                 onClick={handleSend}
@@ -206,9 +189,6 @@ const ChatPage: React.FC = () => {
                             </button>
                         </div>
                     </div>
-
-                   
-
                 </div>
 
                 {error && <p className="text-red-500">{error}</p>}
