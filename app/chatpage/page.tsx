@@ -1,11 +1,10 @@
-"use client";
+"use client"
 import React, { useEffect, useState } from 'react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Send } from 'lucide-react';
-import { auth } from '../../firebase';
+import { auth, db } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
 import { addDoc, collection, query, orderBy, onSnapshot, getDocs } from 'firebase/firestore';
-import { db } from '../../firebase';
 import ChatSidebar from '../../components/Sidebar';
 import Markdown from 'react-markdown';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -23,8 +22,7 @@ const ChatPage: React.FC = () => {
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [chatHistory, setChatHistory] = useState<any[]>([]);
-
-    const [isClient, setIsClient] = useState(false);
+    const [conversationHistory, setConversationHistory] = useState<string[]>([]);
 
     useEffect(() => {
         const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -40,23 +38,15 @@ const ChatPage: React.FC = () => {
         });
         return () => unsubscribe();
     }, []);
-    
-    useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-            setUser(currentUser);
-            if (currentUser) {
-                loadChatHistory(currentUser.uid);
-                loadPreviousChats(currentUser.uid);
-            }
-        });
-        return () => unsubscribe();
-    }, []);
 
-    const loadChatHistory = (userId: string) => {
+    const loadChatHistory = async (userId: string) => {
         const q = query(collection(db, 'chatHistory', userId, 'messages'), orderBy('timestamp'));
         onSnapshot(q, (querySnapshot) => {
             const chatMessages = querySnapshot.docs.map(doc => doc.data());
             setMessages(chatMessages);
+            // Update conversation history
+            const history = chatMessages.map(msg => `${msg.role}: ${msg.content}`);
+            setConversationHistory(history);
         });
     };
 
@@ -89,17 +79,30 @@ const ChatPage: React.FC = () => {
 
             setIsLoading(true);
             try {
-                const result = await model.generateContent(input);
+                // Update conversation history with the new user message
+                const updatedHistory = [...conversationHistory, `Human: ${input}`];
+                
+                // Prepare the context for the AI
+                const context = updatedHistory.join('\n');
+                
+                // Generate AI response with context
+                const result = await model.generateContent(context);
+                const botResponse = result.response.text();
+                
                 const botMessage = {
                     role: 'assistant',
-                    content: result.response.text(),
+                    content: botResponse,
                     timestamp: new Date(),
                 };
                 setMessages((prev) => [...prev, botMessage]);
+                
+                // Update conversation history with the AI response
+                setConversationHistory([...updatedHistory, `AI: ${botResponse}`]);
+                
                 if (user) {
                     await addDoc(collection(db, 'chatHistory', user.uid, 'messages'), botMessage);
                 }
-                speakResponse(botMessage.content);
+                speakResponse(botResponse);
             } catch (error) {
                 console.error('Error generating content:', error);
                 setMessages((prev) => [
@@ -107,7 +110,7 @@ const ChatPage: React.FC = () => {
                     { role: 'assistant', content: 'Sorry, something went wrong.', timestamp: new Date() },
                 ]);
             } finally {
-                setIsLoading(false); 
+                setIsLoading(false);
             }
         } else {
             setError('Message limit reached. Please sign in to continue.');
