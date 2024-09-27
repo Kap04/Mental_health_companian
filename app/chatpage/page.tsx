@@ -1,10 +1,11 @@
-"use client"
+"use client";
+
 import React, { useEffect, useState } from 'react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Send } from 'lucide-react';
 import { auth, db } from '../../firebase';
 import { onAuthStateChanged } from 'firebase/auth';
-import { addDoc, collection, query, orderBy, onSnapshot, getDocs } from 'firebase/firestore';
+import { addDoc, collection, query, orderBy, onSnapshot, getDocs, limit } from 'firebase/firestore';
 import ChatSidebar from '../../components/Sidebar';
 import Markdown from 'react-markdown';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -12,7 +13,11 @@ import VoiceInput from '../_component/VoiceInput';
 
 const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
 const genAI = new GoogleGenerativeAI(apiKey);
-const model = genAI.getGenerativeModel({ model: "tunedModels/mentalhealthbotreal-j61lbjfdj54k" });
+//Model ID: tunedModels/mentalhealthbotreal-j61lbjfdj54k ( best model)
+//Model ID: tunedModels/mental-health-companian-okvhy316xzy2
+const model = genAI.getGenerativeModel({ model: "tunedModels/mental-health-companian-okvhy316xzy2" });
+
+const MAX_HISTORY_LENGTH = 10; // 5 user messages + 5 AI responses
 
 const ChatPage: React.FC = () => {
     const [input, setInput] = useState('');
@@ -40,9 +45,13 @@ const ChatPage: React.FC = () => {
     }, []);
 
     const loadChatHistory = async (userId: string) => {
-        const q = query(collection(db, 'chatHistory', userId, 'messages'), orderBy('timestamp'));
+        const q = query(
+            collection(db, 'chatHistory', userId, 'messages'),
+            orderBy('timestamp', 'desc'),
+            limit(MAX_HISTORY_LENGTH)
+        );
         onSnapshot(q, (querySnapshot) => {
-            const chatMessages = querySnapshot.docs.map(doc => doc.data());
+            const chatMessages = querySnapshot.docs.map(doc => doc.data()).reverse();
             setMessages(chatMessages);
             // Update conversation history
             const history = chatMessages.map(msg => `${msg.role}: ${msg.content}`);
@@ -80,7 +89,7 @@ const ChatPage: React.FC = () => {
             setIsLoading(true);
             try {
                 // Update conversation history with the new user message
-                const updatedHistory = [...conversationHistory, `Human: ${input}`];
+                const updatedHistory = [...conversationHistory, `Human: ${input}`].slice(-MAX_HISTORY_LENGTH);
                 
                 // Prepare the context for the AI
                 const context = updatedHistory.join('\n');
@@ -97,7 +106,7 @@ const ChatPage: React.FC = () => {
                 setMessages((prev) => [...prev, botMessage]);
                 
                 // Update conversation history with the AI response
-                setConversationHistory([...updatedHistory, `AI: ${botResponse}`]);
+                setConversationHistory([...updatedHistory, `AI: ${botResponse}`].slice(-MAX_HISTORY_LENGTH));
                 
                 if (user) {
                     await addDoc(collection(db, 'chatHistory', user.uid, 'messages'), botMessage);
@@ -166,23 +175,6 @@ const ChatPage: React.FC = () => {
                 </div>
 
                 <div className="w-full max-w-3xl pb-6 px-4">
-                    {/* <div className="relative">
-                        <input
-                            type="text"
-                            value={input}
-                            onChange={(e) => setInput(e.target.value)}
-                            onKeyPress={handleKeyPress}
-                            placeholder="Type your message here..."
-                            className="w-full focus:outline-none focus:placeholder-gray-400 text-black placeholder-gray-500 pl-4 pr-20 py-3 rounded-full bg-white shadow-md"
-                        />
-                        <VoiceInput onTranscript={handleVoiceInput} />
-                        <button
-                            onClick={handleSend}
-                            className="absolute right-2 top-1/2 transform -translate-y-1/2 inline-flex items-center justify-center rounded-full p-2 transition duration-500 ease-in-out text-white bg-[rgb(153,186,246)] hover:bg-[#E6D7FF] focus:outline-none"
-                        >
-                            <Send size={20} />
-                        </button>
-                    </div> */}
                     <div className="relative">
                         <input
                             type="text"
