@@ -1,16 +1,17 @@
-"use client"
-import React, { useEffect, useState } from 'react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
-import { Send } from 'lucide-react';
-import { auth, db } from '../../firebase';
-import { addDoc, collection, query, orderBy, onSnapshot, getDocs, limit } from 'firebase/firestore';
-import ChatSidebar from '../../components/Sidebar';
-import Markdown from 'react-markdown';
-import { Skeleton } from '@/components/ui/skeleton';
-import VoiceInput from '../_component/VoiceInput';
-import { useUser } from '@clerk/nextjs';  // Import useUser hook from Clerk
+"use client";
 
-const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
+import React, { useEffect, useState } from "react";
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { Send } from "lucide-react";
+import { auth, db } from "../../firebase";
+import { onAuthStateChanged } from "firebase/auth";
+import { addDoc, collection, query, orderBy, onSnapshot, doc, updateDoc, getDoc } from "firebase/firestore";
+import ChatSidebar from "../../components/Sidebar";
+import Markdown from "react-markdown";
+import { Skeleton } from "@/components/ui/skeleton";
+import VoiceInput from "../_component/VoiceInput";
+
+const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 const model = genAI.getGenerativeModel({ model: "tunedModels/mentalhealthbotreal-j61lbjfdj54k" });
 
@@ -19,108 +20,128 @@ const MAX_HISTORY_LENGTH = 10;
 const ChatPage: React.FC = () => {
     const [input, setInput] = useState('');
     const [messages, setMessages] = useState<any[]>([]);
+    const [user, setUser] = useState<any>(null);
     const [responseCount, setResponseCount] = useState(0);
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [chatHistory, setChatHistory] = useState<any[]>([]);
     const [conversationHistory, setConversationHistory] = useState<string[]>([]);
-    
-    // Use the useUser hook from Clerk
-    const { user } = useUser();
+    const [isVoiceInput, setIsVoiceInput] = useState(false);
+    const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
 
-    //check for clerk user instead of firebase user
     useEffect(() => {
-        if (user) {
-            loadChatHistory(user.id);
-            loadPreviousChats(user.id);
-        }
-    }, [user]);
+        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
+            setUser(currentUser);
+            if (currentUser) {
+                try {
+                    await loadChatSessions(currentUser.uid);
+                    createNewSession(currentUser.uid);
+                } catch (error) {
+                    console.error("Error loading chat sessions:", error);
+                }
+            }
+        });
+        return () => unsubscribe();
+    }, []);
 
-    const loadChatHistory = async (userId: string) => {
-        const q = query(
-            collection(db, 'chatHistory', userId, 'messages'),
-            orderBy('timestamp', 'desc'),
-            limit(MAX_HISTORY_LENGTH)
-        );
+    const loadChatSessions = async (userId: string) => {
+        const sessionsRef = collection(db, 'userSessions', userId, 'sessions');
+        const q = query(sessionsRef, orderBy('timestamp', 'desc'));
         onSnapshot(q, (querySnapshot) => {
-            const chatMessages = querySnapshot.docs.map(doc => doc.data()).reverse();
-            setMessages(chatMessages);
-            const history = chatMessages.map(msg => `${msg.role}: ${msg.content}`);
-            setConversationHistory(history);
+            const sessions = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+            setChatHistory(sessions);
         });
     };
 
-    const loadPreviousChats = async (userId: string) => {
-        const chatsRef = collection(db, 'chatHistory', userId, 'chats');
-        const querySnapshot = await getDocs(chatsRef);
-        const chats = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-        setChatHistory(chats);
+    const createNewSession = async (userId: string) => {
+        const newSessionRef = await addDoc(collection(db, 'userSessions', userId, 'sessions'), {
+            title: 'New Chat Session', // Temporary title until first message
+            timestamp: new Date(),
+        });
+        setCurrentSessionId(newSessionRef.id);
+        setMessages([]);
+        setConversationHistory([]);
+    };
+
+    const loadSession = async (sessionId: string) => {
+        if (!user) return;
+        setCurrentSessionId(sessionId);
+        const messagesRef = collection(db, 'userSessions', user.uid, 'sessions', sessionId, 'messages');
+        const q = query(messagesRef, orderBy('timestamp', 'asc'));
+        onSnapshot(q, (querySnapshot) => {
+            const chatMessages = querySnapshot.docs.map(doc => doc.data());
+            setMessages(chatMessages);
+            const history = chatMessages.map(msg => `${msg.role}: ${msg.content}`);
+            setConversationHistory(history.slice(-MAX_HISTORY_LENGTH));
+        });
     };
 
     const handleSend = async () => {
-        if (!input.trim()) return;
+        if (!input.trim() || !currentSessionId) return;
 
-        const userMessage = { role: 'user', content: input };
+        const userMessage = { role: 'user', content: input, timestamp: new Date() };
         setMessages((prev) => [...prev, userMessage]);
         setInput('');
 
-        if (user || responseCount < 5) {
-            const messageData = {
-                role: 'user',
-                content: input,
-                timestamp: new Date(),
-                email: user?.primaryEmailAddress?.emailAddress || null, // Add user's email from clerk
-            };
+        if (user) {
+            await addDoc(collection(db, 'userSessions', user.uid, 'sessions', currentSessionId, 'messages'), userMessage);
 
-            if (user) {
-                await addDoc(collection(db, 'chatHistory', user.id, 'messages'), messageData);
-            } else {
-                setResponseCount(prevCount => prevCount + 1);
-            }
+            const sessionRef = doc(db, 'userSessions', user.uid, 'sessions', currentSessionId);
+            const sessionDoc = await getDoc(sessionRef);
+            const sessionData = sessionDoc.data();
 
-            setIsLoading(true);
-            try {
-                const updatedHistory = [...conversationHistory, `Human: ${input}`].slice(-MAX_HISTORY_LENGTH);
-                const context = updatedHistory.join('\n');
-                const result = await model.generateContent(context);
-                const botResponse = result.response.text();
-                
-                const botMessage = {
-                    role: 'assistant',
-                    content: botResponse,
-                    timestamp: new Date(),
-                    email: user?.primaryEmailAddress?.emailAddress || null, // Add user's email
-                };
-                setMessages((prev) => [...prev, botMessage]);
-                
-                setConversationHistory([...updatedHistory, `AI: ${botResponse}`].slice(-MAX_HISTORY_LENGTH));
-                
-                if (user) {
-                    await addDoc(collection(db, 'chatHistory', user.id, 'messages'), botMessage);
-                }
-                speakResponse(botResponse);
-            } catch (error) {
-                console.error('Error generating content:', error);
-                setMessages((prev) => [
-                    ...prev,
-                    { role: 'assistant', content: 'Sorry, something went wrong.', timestamp: new Date() },
-                ]);
-            } finally {
-                setIsLoading(false);
+            if (sessionData && sessionData.title === 'New Chat Session') {
+                await updateDoc(sessionRef, { title: input.slice(0, 50) });
             }
         } else {
-            setError('Message limit reached. Please sign in to continue.');
+            setResponseCount(prevCount => prevCount + 1);
+        }
+
+        setIsLoading(true);
+        try {
+            const updatedHistory = [...conversationHistory, `Human: ${input}`].slice(-MAX_HISTORY_LENGTH);
+            const context = updatedHistory.join('\n');
+            const result = await model.generateContent(context);
+            const botResponse = result.response.text();
+
+            if (!botResponse) throw new Error('Invalid response from AI');
+
+            const botMessage = {
+                role: 'assistant',
+                content: botResponse,
+                timestamp: new Date(),
+            };
+            setMessages((prev) => [...prev, botMessage]);
+            setConversationHistory([...updatedHistory, `AI: ${botResponse}`].slice(-MAX_HISTORY_LENGTH));
+
+            if (user) {
+                await addDoc(collection(db, 'userSessions', user.uid, 'sessions', currentSessionId, 'messages'), botMessage);
+            }
+            if (isVoiceInput) {
+                speakResponse(botResponse);
+            }
+        } catch (error) {
+            console.error('Error generating content:', error);
+            setMessages((prev) => [
+                ...prev,
+                { role: 'assistant', content: 'Sorry, something went wrong.', timestamp: new Date() },
+            ]);
+        } finally {
+            setIsLoading(false);
+            setIsVoiceInput(false);
         }
     };
 
     const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
         if (e.key === 'Enter') {
+            setIsVoiceInput(false);
             handleSend();
         }
     };
 
     const handleVoiceInput = (transcript: string) => {
         setInput(transcript);
+        setIsVoiceInput(true);
     };
 
     const speakResponse = (text: string) => {
@@ -129,8 +150,12 @@ const ChatPage: React.FC = () => {
     };
 
     return (
-        <div className="flex h-screen bg-gradient-to-b from-blue-100 to-purple-100">
-            <ChatSidebar chatHistory={chatHistory} />
+        <div className="flex h-screen bg-gradient-to-b from-[#e0f7fa] to-[#e1bee7]">
+            <ChatSidebar 
+                chatHistory={chatHistory} 
+                onSessionSelect={loadSession} 
+                onNewChat={() => createNewSession(user.uid)} 
+            />
 
             <div className="flex-1 flex flex-col items-center">
                 <div className="w-full max-w-3xl flex-1 overflow-y-auto p-6 space-y-4">
@@ -142,8 +167,8 @@ const ChatPage: React.FC = () => {
                             <div
                                 className={`max-w-xl px-4 py-2 rounded-lg ${
                                     msg.role === 'user'
-                                        ? 'bg-white text-black'
-                                        : 'bg-white text-black shadow-md'
+                                        ? 'bg-[#c8e6c9] text-black' // light green for user
+                                        : 'bg-[#bbdefb] text-black shadow-md' // light blue for assistant
                                 }`}
                             >
                                 <Markdown>{msg.content}</Markdown>
@@ -169,7 +194,7 @@ const ChatPage: React.FC = () => {
                             onChange={(e) => setInput(e.target.value)}
                             onKeyPress={handleKeyPress}
                             placeholder="Type your message here..."
-                            className="w-full focus:outline-none focus:placeholder-gray-400 text-black placeholder-gray-500 pl-4 pr-20 py-3 rounded-full bg-white shadow-md"
+                            className="w-full focus:outline-none focus:placeholder-gray-400 text-black placeholder-gray-500 pl-4 pr-20 py-3 rounded-full bg-[#f1f8e9] shadow-md transition duration-300"
                         />
                         <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
                             <div
@@ -179,7 +204,7 @@ const ChatPage: React.FC = () => {
                             </div>
                             <button
                                 onClick={handleSend}
-                                className="inline-flex items-center justify-center rounded-full p-2 transition duration-500 ease-in-out text-white bg-[rgb(153,186,246)] hover:bg-[#E6D7FF] focus:outline-none"
+                                className="inline-flex items-center justify-center rounded-full p-2 transition duration-500 ease-in-out text-white bg-[#90caf9] hover:bg-[#81d4fa] focus:outline-none"
                             >
                                 <Send size={20} />
                             </button>
@@ -187,7 +212,7 @@ const ChatPage: React.FC = () => {
                     </div>
                 </div>
 
-                {error && <p className="text-red-500">{error}</p>}
+                {error && <p className="text-orange-500">{error}</p>} {/* Softer error color */}
             </div>
         </div>
     );
