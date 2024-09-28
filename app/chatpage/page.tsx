@@ -1,48 +1,39 @@
-"use client";
-
 import React, { useEffect, useState } from 'react';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Send } from 'lucide-react';
 import { auth, db } from '../../firebase';
-import { onAuthStateChanged } from 'firebase/auth';
 import { addDoc, collection, query, orderBy, onSnapshot, getDocs, limit } from 'firebase/firestore';
 import ChatSidebar from '../../components/Sidebar';
 import Markdown from 'react-markdown';
 import { Skeleton } from '@/components/ui/skeleton';
 import VoiceInput from '../_component/VoiceInput';
+import { useUser } from '@clerk/nextjs';  // Import useUser hook from Clerk
 
 const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || '';
 const genAI = new GoogleGenerativeAI(apiKey);
-//Model ID: tunedModels/mentalhealthbotreal-j61lbjfdj54k ( best model)
-//Model ID: tunedModels/mental-health-companian-okvhy316xzy2
-const model = genAI.getGenerativeModel({ model: "tunedModels/mental-health-companian-okvhy316xzy2" });
+const model = genAI.getGenerativeModel({ model: "tunedModels/mentalhealthbotreal-j61lbjfdj54k" });
 
-const MAX_HISTORY_LENGTH = 10; // 5 user messages + 5 AI responses
+const MAX_HISTORY_LENGTH = 10;
 
 const ChatPage: React.FC = () => {
     const [input, setInput] = useState('');
     const [messages, setMessages] = useState<any[]>([]);
-    const [user, setUser] = useState<any>(null);
     const [responseCount, setResponseCount] = useState(0);
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [chatHistory, setChatHistory] = useState<any[]>([]);
     const [conversationHistory, setConversationHistory] = useState<string[]>([]);
+    
+    // Use the useUser hook from Clerk
+    const { user } = useUser();
 
+    //check for clerk user instead of firebase user
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-            setUser(currentUser);
-            if (currentUser) {
-                try {
-                    await loadChatHistory(currentUser.uid);
-                    await loadPreviousChats(currentUser.uid);
-                } catch (error) {
-                    console.error("Error loading chat history:", error);
-                }
-            }
-        });
-        return () => unsubscribe();
-    }, []);
+        if (user) {
+            loadChatHistory(user.id);
+            loadPreviousChats(user.id);
+        }
+    }, [user]);
 
     const loadChatHistory = async (userId: string) => {
         const q = query(
@@ -53,7 +44,6 @@ const ChatPage: React.FC = () => {
         onSnapshot(q, (querySnapshot) => {
             const chatMessages = querySnapshot.docs.map(doc => doc.data()).reverse();
             setMessages(chatMessages);
-            // Update conversation history
             const history = chatMessages.map(msg => `${msg.role}: ${msg.content}`);
             setConversationHistory(history);
         });
@@ -78,23 +68,19 @@ const ChatPage: React.FC = () => {
                 role: 'user',
                 content: input,
                 timestamp: new Date(),
+                email: user?.primaryEmailAddress?.emailAddress || null, // Add user's email from clerk
             };
 
             if (user) {
-                await addDoc(collection(db, 'chatHistory', user.uid, 'messages'), messageData);
+                await addDoc(collection(db, 'chatHistory', user.id, 'messages'), messageData);
             } else {
                 setResponseCount(prevCount => prevCount + 1);
             }
 
             setIsLoading(true);
             try {
-                // Update conversation history with the new user message
                 const updatedHistory = [...conversationHistory, `Human: ${input}`].slice(-MAX_HISTORY_LENGTH);
-                
-                // Prepare the context for the AI
                 const context = updatedHistory.join('\n');
-                
-                // Generate AI response with context
                 const result = await model.generateContent(context);
                 const botResponse = result.response.text();
                 
@@ -102,14 +88,14 @@ const ChatPage: React.FC = () => {
                     role: 'assistant',
                     content: botResponse,
                     timestamp: new Date(),
+                    email: user?.primaryEmailAddress?.emailAddress || null, // Add user's email
                 };
                 setMessages((prev) => [...prev, botMessage]);
                 
-                // Update conversation history with the AI response
                 setConversationHistory([...updatedHistory, `AI: ${botResponse}`].slice(-MAX_HISTORY_LENGTH));
                 
                 if (user) {
-                    await addDoc(collection(db, 'chatHistory', user.uid, 'messages'), botMessage);
+                    await addDoc(collection(db, 'chatHistory', user.id, 'messages'), botMessage);
                 }
                 speakResponse(botResponse);
             } catch (error) {
@@ -207,6 +193,3 @@ const ChatPage: React.FC = () => {
 };
 
 export default ChatPage;
-
-
-
