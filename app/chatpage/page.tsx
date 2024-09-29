@@ -10,6 +10,10 @@ import ChatSidebar from "../../components/Sidebar";
 import Markdown from "react-markdown";
 import { Skeleton } from "@/components/ui/skeleton";
 import VoiceInput from "../_component/VoiceInput";
+import Chatbot_logo from "../../components/assets/bot.png"
+import Image from "next/image";
+
+
 
 const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
@@ -151,10 +155,10 @@ const ChatPage: React.FC = () => {
 
     return (
         <div className="flex h-screen bg-[#FAF9F6]">
-            <ChatSidebar 
-                chatHistory={chatHistory} 
-                onSessionSelect={loadSession} 
-                onNewChat={() => createNewSession(user.uid)} 
+            <ChatSidebar
+                chatHistory={chatHistory}
+                onSessionSelect={loadSession}
+                onNewChat={() => createNewSession(user.uid)}
             />
 
             <div className="flex-1 flex flex-col items-center">
@@ -164,12 +168,22 @@ const ChatPage: React.FC = () => {
                             key={index}
                             className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                         >
+                            {msg.role === 'assistant' && (
+                                <div className="flex-shrink-0  mr-2">
+                                    <Image
+                                        src={Chatbot_logo}
+                                        alt="Bot"
+                                        width={64}
+                                        height={64}
+                                        className="rounded-full pr-2"
+                                    />
+                                </div>
+                            )}
                             <div
-                                className={`max-w-xl px-4 py-2 rounded-lg ${
-                                    msg.role === 'user'
-                                        ? 'bg-green-900 text-white' 
-                                        : 'bg-[#F9F6EE] text-green-900 shadow-md' 
-                                }`}
+                                className={`max-w-xl px-4 py-2 rounded-lg ${msg.role === 'user'
+                                        ? 'bg-green-900 text-white'
+                                        : 'bg-[#F9F6EE] text-green-900 shadow-md'
+                                    }`}
                             >
                                 <Markdown>{msg.content}</Markdown>
                             </div>
@@ -178,6 +192,15 @@ const ChatPage: React.FC = () => {
 
                     {isLoading && (
                         <div className="flex justify-start">
+                            <div className="flex-shrink-0 mr-2">
+                                <Image
+                                    src={Chatbot_logo}
+                                    alt="Bot"
+                                    width={64}
+                                    height={64}
+                                    className="rounded-full pr-2"
+                                />
+                            </div>
                             <div className="max-w-xl">
                                 <Skeleton className="h-6 w-[200px] rounded-lg" />
                                 <Skeleton className="h-4 w-[150px] rounded-lg mt-2" />
