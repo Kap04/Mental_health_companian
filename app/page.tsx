@@ -34,10 +34,10 @@ const LandingPage: React.FC = () => {
             </Link>
           </div>
         </div>
-      </main>
       <section className="w-full h-screen">
         <SerenityCarousel />
       </section>
+      </main>
     </div>
   );
 };

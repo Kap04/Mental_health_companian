@@ -1,22 +1,23 @@
 import React, { useState } from 'react';
-import { ChevronRight } from 'lucide-react';
-import Markdown from 'react-markdown';
+import { ChevronRight, ChevronLeft, Plus } from 'lucide-react';
 
 interface ChatSidebarProps {
-  chatHistory: any[];
+    chatHistory: any[]; // Can be more specific with a type if needed
+    onSessionSelect: (sessionId: string) => void; // Changed to sessionId for clarity
+    onNewChat: () => void;
 }
 
-const ChatSidebar: React.FC<ChatSidebarProps> = ({ chatHistory }) => {
-  const [isHovered, setIsHovered] = useState(false);
+const ChatSidebar: React.FC<ChatSidebarProps> = ({ chatHistory, onSessionSelect, onNewChat }) => {
+    const [isOpen, setIsOpen] = useState(false);
 
   return (
     <div className="relative h-full">
       <div
         className={`fixed top-0 left-0 h-full w-64 bg-green-950 bg-opacity-80 text-white p-4 overflow-y-auto transition-transform duration-300 ease-in-out ${
-          isHovered ? 'translate-x-0' : '-translate-x-64'
+          isOpen ? 'translate-x-0' : '-translate-x-64'
         }`}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        onMouseEnter={() => setIsOpen(true)}
+        onMouseLeave={() => setIsOpen(false)}
       >
         <div className="h-full flex flex-col">
           <h2 className="text-xl font-bold mb-4">Chat History</h2>
@@ -31,9 +32,9 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ chatHistory }) => {
       </div>
       <div 
         className={`fixed top-1/2 left-0 -translate-y-1/2 transition-opacity duration-300 ${
-          isHovered ? 'opacity-0' : 'opacity-100'
+          isOpen ? 'opacity-0' : 'opacity-100'
         }`}
-        onMouseEnter={() => setIsHovered(true)}
+        onMouseEnter={() => setIsOpen(true)}
       >
         <ChevronRight 
           size={40} 
