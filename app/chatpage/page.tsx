@@ -129,7 +129,7 @@ const ChatPage: React.FC = () => {
     };
 
     return (
-        <div className="flex h-screen bg-gradient-to-b from-blue-100 to-purple-100">
+        <div className="flex h-screen bg-gradient-to-b bg-[#F9F6EE]">
             <ChatSidebar chatHistory={chatHistory} />
 
             <div className="flex-1 flex flex-col items-center">
@@ -169,7 +169,7 @@ const ChatPage: React.FC = () => {
                             onChange={(e) => setInput(e.target.value)}
                             onKeyPress={handleKeyPress}
                             placeholder="Type your message here..."
-                            className="w-full focus:outline-none focus:placeholder-gray-400 text-black placeholder-gray-500 pl-4 pr-20 py-3 rounded-full bg-white shadow-md"
+                            className="w-full focus:outline-none focus:placeholder-gray-400 text-black placeholder-green-500 pl-4 pr-20 py-3 rounded-full bg-white shadow-md"
                         />
                         <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
                             <div
@@ -179,7 +179,7 @@ const ChatPage: React.FC = () => {
                             </div>
                             <button
                                 onClick={handleSend}
-                                className="inline-flex items-center justify-center rounded-full p-2 transition duration-500 ease-in-out text-white bg-[rgb(153,186,246)] hover:bg-[#E6D7FF] focus:outline-none"
+                                className="inline-flex items-center justify-center rounded-full p-2 transition duration-500 ease-in-out text-white bg-green-900  hover:bg-green-500 focus:outline-none"
                             >
                                 <Send size={20} />
                             </button>

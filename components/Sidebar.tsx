@@ -12,7 +12,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ chatHistory }) => {
   return (
     <div className="relative h-full">
       <div
-        className={`fixed top-0 left-0 h-full w-64 bg-gray-800 bg-opacity-80 text-white p-4 overflow-y-auto transition-transform duration-300 ease-in-out ${
+        className={`fixed top-0 left-0 h-full w-64 bg-green-950 bg-opacity-80 text-white p-4 overflow-y-auto transition-transform duration-300 ease-in-out ${
           isHovered ? 'translate-x-0' : '-translate-x-64'
         }`}
         onMouseEnter={() => setIsHovered(true)}
