@@ -1,19 +1,15 @@
-"use client";
-
+"use client"
 import React, { useEffect, useState } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-import { Send } from "lucide-react";
-import { auth, db } from "../../firebase";
-import { onAuthStateChanged } from "firebase/auth";
+import { Send, Volume2, VolumeX, Mic } from "lucide-react";
+import { useAuth } from "@clerk/nextjs";
 import { addDoc, collection, query, orderBy, onSnapshot, doc, updateDoc, getDoc } from "firebase/firestore";
+import { db } from "../../firebase";
 import ChatSidebar from "../../components/Sidebar";
 import Markdown from "react-markdown";
 import { Skeleton } from "@/components/ui/skeleton";
-import VoiceInput from "../_component/VoiceInput";
-import Chatbot_logo from "../../components/assets/bot.png"
 import Image from "next/image";
-
-
+import Chatbot_logo from "../../components/assets/bot.png";
 
 const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
@@ -22,80 +18,101 @@ const model = genAI.getGenerativeModel({ model: "tunedModels/mentalhealthbotreal
 const MAX_HISTORY_LENGTH = 10;
 
 const ChatPage: React.FC = () => {
+    const { userId, isSignedIn } = useAuth();
     const [input, setInput] = useState('');
     const [messages, setMessages] = useState<any[]>([]);
-    const [user, setUser] = useState<any>(null);
     const [responseCount, setResponseCount] = useState(0);
     const [error, setError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const [chatHistory, setChatHistory] = useState<any[]>([]);
     const [conversationHistory, setConversationHistory] = useState<string[]>([]);
-    const [isVoiceInput, setIsVoiceInput] = useState(false);
     const [currentSessionId, setCurrentSessionId] = useState<string | null>(null);
+    const [isBotSpeechEnabled, setIsBotSpeechEnabled] = useState<boolean[]>([]);
+    const [isVoiceInput, setIsVoiceInput] = useState(false);
+    const [isListening, setIsListening] = useState(false);
+    const [voiceInputMessage, setVoiceInputMessage] = useState('');
 
     useEffect(() => {
-        const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
-            setUser(currentUser);
-            if (currentUser) {
-                try {
-                    await loadChatSessions(currentUser.uid);
-                    createNewSession(currentUser.uid);
-                } catch (error) {
-                    console.error("Error loading chat sessions:", error);
-                }
-            }
-        });
-        return () => unsubscribe();
-    }, []);
+        if (isSignedIn && userId) {
+            loadChatSessions(userId);
+            createNewSession(userId);
+        }
+    }, [isSignedIn, userId]);
 
     const loadChatSessions = async (userId: string) => {
-        const sessionsRef = collection(db, 'userSessions', userId, 'sessions');
-        const q = query(sessionsRef, orderBy('timestamp', 'desc'));
-        onSnapshot(q, (querySnapshot) => {
-            const sessions = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-            setChatHistory(sessions);
-        });
+        try {
+            const sessionsRef = collection(db, 'userSessions', userId, 'sessions');
+            const q = query(sessionsRef, orderBy('timestamp', 'desc'));
+            onSnapshot(q, (querySnapshot) => {
+                const sessions = querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                setChatHistory(sessions);
+            });
+        } catch (error) {
+            console.error("Error loading chat sessions:", error);
+            setError("Failed to load chat sessions. Please try again.");
+        }
     };
 
     const createNewSession = async (userId: string) => {
-        const newSessionRef = await addDoc(collection(db, 'userSessions', userId, 'sessions'), {
-            title: 'New Chat Session', // Temporary title until first message
-            timestamp: new Date(),
-        });
-        setCurrentSessionId(newSessionRef.id);
-        setMessages([]);
-        setConversationHistory([]);
+        try {
+            const newSessionRef = await addDoc(collection(db, 'userSessions', userId, 'sessions'), {
+                title: 'New Chat Session',
+                timestamp: new Date(),
+            });
+            setCurrentSessionId(newSessionRef.id);
+            setMessages([]);
+            setConversationHistory([]);
+            setIsBotSpeechEnabled([]);
+        } catch (error) {
+            console.error("Error creating new session:", error);
+            setError("Failed to create a new chat session. Please try again.");
+        }
     };
 
     const loadSession = async (sessionId: string) => {
-        if (!user) return;
-        setCurrentSessionId(sessionId);
-        const messagesRef = collection(db, 'userSessions', user.uid, 'sessions', sessionId, 'messages');
-        const q = query(messagesRef, orderBy('timestamp', 'asc'));
-        onSnapshot(q, (querySnapshot) => {
-            const chatMessages = querySnapshot.docs.map(doc => doc.data());
-            setMessages(chatMessages);
-            const history = chatMessages.map(msg => `${msg.role}: ${msg.content}`);
-            setConversationHistory(history.slice(-MAX_HISTORY_LENGTH));
-        });
+        if (!isSignedIn || !userId) return;
+        try {
+            setCurrentSessionId(sessionId);
+            const messagesRef = collection(db, 'userSessions', userId, 'sessions', sessionId, 'messages');
+            const q = query(messagesRef, orderBy('timestamp', 'asc'));
+            onSnapshot(q, (querySnapshot) => {
+                const chatMessages = querySnapshot.docs.map(doc => doc.data());
+                setMessages(chatMessages);
+                const history = chatMessages.map(msg => `${msg.role}: ${msg.content}`);
+                setConversationHistory(history.slice(-MAX_HISTORY_LENGTH));
+                setIsBotSpeechEnabled(new Array(chatMessages.length).fill(false));
+            });
+        } catch (error) {
+            console.error("Error loading session:", error);
+            setError("Failed to load the chat session. Please try again.");
+        }
     };
 
     const handleSend = async () => {
         if (!input.trim() || !currentSessionId) return;
 
         const userMessage = { role: 'user', content: input, timestamp: new Date() };
+
         setMessages((prev) => [...prev, userMessage]);
+        setIsBotSpeechEnabled((prev) => [...prev, false]);
         setInput('');
+        setVoiceInputMessage('');
 
-        if (user) {
-            await addDoc(collection(db, 'userSessions', user.uid, 'sessions', currentSessionId, 'messages'), userMessage);
+        if (isSignedIn && userId) {
+            try {
+                await addDoc(collection(db, 'userSessions', userId, 'sessions', currentSessionId, 'messages'), userMessage);
 
-            const sessionRef = doc(db, 'userSessions', user.uid, 'sessions', currentSessionId);
-            const sessionDoc = await getDoc(sessionRef);
-            const sessionData = sessionDoc.data();
+                const sessionRef = doc(db, 'userSessions', userId, 'sessions', currentSessionId);
+                const sessionDoc = await getDoc(sessionRef);
+                const sessionData = sessionDoc.data();
 
-            if (sessionData && sessionData.title === 'New Chat Session') {
-                await updateDoc(sessionRef, { title: input.slice(0, 50) });
+                if (sessionData && sessionData.title === 'New Chat Session') {
+                    await updateDoc(sessionRef, { title: userMessage.content.slice(0, 50) });
+                }
+            } catch (error) {
+                console.error("Error saving user message:", error);
+                setError("Failed to save your message. Please try again.");
+                return;
             }
         } else {
             setResponseCount(prevCount => prevCount + 1);
@@ -103,7 +120,7 @@ const ChatPage: React.FC = () => {
 
         setIsLoading(true);
         try {
-            const updatedHistory = [...conversationHistory, `Human: ${input}`].slice(-MAX_HISTORY_LENGTH);
+            const updatedHistory = [...conversationHistory, `Human: ${userMessage.content}`].slice(-MAX_HISTORY_LENGTH);
             const context = updatedHistory.join('\n');
             const result = await model.generateContent(context);
             const botResponse = result.response.text();
@@ -116,20 +133,24 @@ const ChatPage: React.FC = () => {
                 timestamp: new Date(),
             };
             setMessages((prev) => [...prev, botMessage]);
+            setIsBotSpeechEnabled((prev) => [...prev, false]);
             setConversationHistory([...updatedHistory, `AI: ${botResponse}`].slice(-MAX_HISTORY_LENGTH));
 
-            if (user) {
-                await addDoc(collection(db, 'userSessions', user.uid, 'sessions', currentSessionId, 'messages'), botMessage);
+            if (isSignedIn && userId) {
+                await addDoc(collection(db, 'userSessions', userId, 'sessions', currentSessionId, 'messages'), botMessage);
             }
+
             if (isVoiceInput) {
                 speakResponse(botResponse);
             }
         } catch (error) {
             console.error('Error generating content:', error);
+            setError('Failed to get a response from the AI. Please try again.');
             setMessages((prev) => [
                 ...prev,
                 { role: 'assistant', content: 'Sorry, something went wrong.', timestamp: new Date() },
             ]);
+            setIsBotSpeechEnabled((prev) => [...prev, false]);
         } finally {
             setIsLoading(false);
             setIsVoiceInput(false);
@@ -143,9 +164,40 @@ const ChatPage: React.FC = () => {
         }
     };
 
-    const handleVoiceInput = (transcript: string) => {
-        setInput(transcript);
-        setIsVoiceInput(true);
+    const startVoiceInput = () => {
+        setIsListening(true);
+        setVoiceInputMessage('Listening...');
+
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        if (!SpeechRecognition) {
+            setVoiceInputMessage('Speech recognition is not supported in this browser.');
+            setIsListening(false);
+            return;
+        }
+
+        const recognition = new SpeechRecognition();
+
+        recognition.onresult = (event) => {
+            const transcript = event.results[0][0].transcript;
+            setInput(transcript);
+            setIsVoiceInput(true);
+            setVoiceInputMessage('');
+        };
+
+        recognition.onerror = (event) => {
+            console.error('Speech recognition error', event.error);
+            setVoiceInputMessage('Error in speech recognition. Please try again.');
+            setIsListening(false);
+        };
+
+        recognition.onend = () => {
+            setIsListening(false);
+            if (!input) {
+                setVoiceInputMessage('No speech detected. Please try again.');
+            }
+        };
+
+        recognition.start();
     };
 
     const speakResponse = (text: string) => {
@@ -153,12 +205,27 @@ const ChatPage: React.FC = () => {
         window.speechSynthesis.speak(utterance);
     };
 
+    const toggleBotSpeech = (index: number) => {
+        setIsBotSpeechEnabled((prev) => {
+            const newState = [...prev];
+            newState[index] = !newState[index];
+            
+            if (newState[index]) {
+                speakResponse(messages[index].content);
+            } else {
+                window.speechSynthesis.cancel();
+            }
+            
+            return newState;
+        });
+    };
+
     return (
         <div className="flex h-screen bg-[#FAF9F6]">
             <ChatSidebar
                 chatHistory={chatHistory}
                 onSessionSelect={loadSession}
-                onNewChat={() => createNewSession(user.uid)}
+                onNewChat={() => isSignedIn && userId && createNewSession(userId)}
             />
 
             <div className="flex-1 flex flex-col items-center">
@@ -169,7 +236,7 @@ const ChatPage: React.FC = () => {
                             className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                         >
                             {msg.role === 'assistant' && (
-                                <div className="flex-shrink-0  mr-2">
+                                <div className="flex-shrink-0 mr-2">
                                     <Image
                                         src={Chatbot_logo}
                                         alt="Bot"
@@ -180,13 +247,22 @@ const ChatPage: React.FC = () => {
                                 </div>
                             )}
                             <div
-                                className={`max-w-xl px-4 py-2 rounded-lg ${msg.role === 'user'
+                                className={`max-w-xl px-4 py-2 rounded-lg ${
+                                    msg.role === 'user'
                                         ? 'bg-green-900 text-white'
                                         : 'bg-[#F9F6EE] text-green-900 shadow-md'
-                                    }`}
+                                }`}
                             >
                                 <Markdown>{msg.content}</Markdown>
                             </div>
+                            {msg.role === 'assistant' && (
+                                <button
+                                    onClick={() => toggleBotSpeech(index)}
+                                    className="ml-2 p-1 rounded-full bg-gray-200 hover:bg-gray-300"
+                                >
+                                    {isBotSpeechEnabled[index] ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                                </button>
+                            )}
                         </div>
                     ))}
 
@@ -216,26 +292,30 @@ const ChatPage: React.FC = () => {
                             value={input}
                             onChange={(e) => setInput(e.target.value)}
                             onKeyPress={handleKeyPress}
-                            placeholder="Type your message here..."
+                            placeholder="Type your message or speak..."
                             className="w-full focus:outline-none focus:placeholder-gray-400 text-black placeholder-gray-400 pl-4 pr-20 py-3 rounded-full bg-white shadow-md"
                         />
                         <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
-                            <div
-                                className="inline-flex items-center justify-center rounded-full p-2 transition duration-500 ease-in-out text-white focus:outline-none"
+                            <button
+                                onClick={startVoiceInput}
+                                className={`p-2 rounded-full ${isListening ? 'bg-red-500' : 'bg-gray-200'} hover:bg-gray-300`}
                             >
-                                <VoiceInput onTranscript={handleVoiceInput} />
-                            </div>
+                                <Mic size={20} />
+                            </button>
                             <button
                                 onClick={handleSend}
-                                className="inline-flex items-center justify-center rounded-full p-2 transition duration-500 ease-in-out text-white bg-green-900  hover:bg-green-500 focus:outline-none"
+                                className="inline-flex items-center justify-center rounded-full p-2 transition duration-500 ease-in-out text-white bg-green-900 hover:bg-green-500 focus:outline-none"
                             >
                                 <Send size={20} />
                             </button>
                         </div>
                     </div>
+                    {voiceInputMessage && (
+                        <p className="text-blue-500 mt-2">{voiceInputMessage}</p>
+                    )}
                 </div>
 
-                {error && <p className="text-orange-500">{error}</p>} {/* Softer error color */}
+                {error && <p className="text-red-500 mt-2">{error}</p>}
             </div>
         </div>
     );
