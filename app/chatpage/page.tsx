@@ -3,13 +3,14 @@ import React, { useEffect, useState } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Send, Volume2, VolumeX, Mic } from "lucide-react";
 import { useAuth } from "@clerk/nextjs";
-import { addDoc, collection, query, orderBy, onSnapshot, doc, updateDoc, getDoc } from "firebase/firestore";
+import { addDoc, collection, query, orderBy, onSnapshot, doc, updateDoc, getDoc, deleteDoc } from "firebase/firestore";
 import { db } from "../../firebase";
 import ChatSidebar from "../../components/Sidebar";
 import Markdown from "react-markdown";
 import { Skeleton } from "@/components/ui/skeleton";
 import Image from "next/image";
 import Chatbot_logo from "../../components/assets/bot.png";
+import MiddleLogo from "../../components/MiddleLogo"
 
 const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
@@ -31,6 +32,7 @@ const ChatPage: React.FC = () => {
     const [isVoiceInput, setIsVoiceInput] = useState(false);
     const [isListening, setIsListening] = useState(false);
     const [voiceInputMessage, setVoiceInputMessage] = useState('');
+    const [showHeader, setShowHeader] = useState(true);
 
     useEffect(() => {
         if (isSignedIn && userId) {
@@ -88,8 +90,31 @@ const ChatPage: React.FC = () => {
         }
     };
 
+    const handleDeleteChat = async (sessionId: string) => {
+        if (!isSignedIn || !userId) return;
+        
+        if (window.confirm("Are you sure you want to delete this chat?")) {
+            try {
+                // Delete the session document
+                await deleteDoc(doc(db, 'userSessions', userId, 'sessions', sessionId));
+                
+                // If the deleted session was the current one, create a new session
+                if (sessionId === currentSessionId) {
+                    createNewSession(userId);
+                }
+                
+                console.log("Chat deleted successfully");
+            } catch (error) {
+                console.error("Error deleting chat:", error);
+                setError("Failed to delete the chat. Please try again.");
+            }
+        }
+    }
+
     const handleSend = async () => {
         if (!input.trim() || !currentSessionId) return;
+
+        setShowHeader(false); // Hide the Header when the user sends their first message
 
         const userMessage = { role: 'user', content: input, timestamp: new Date() };
 
@@ -163,6 +188,7 @@ const ChatPage: React.FC = () => {
             handleSend();
         }
     };
+    
 
     const startVoiceInput = () => {
         setIsListening(true);
@@ -209,13 +235,13 @@ const ChatPage: React.FC = () => {
         setIsBotSpeechEnabled((prev) => {
             const newState = [...prev];
             newState[index] = !newState[index];
-            
+
             if (newState[index]) {
                 speakResponse(messages[index].content);
             } else {
                 window.speechSynthesis.cancel();
             }
-            
+
             return newState;
         });
     };
@@ -223,69 +249,78 @@ const ChatPage: React.FC = () => {
     return (
         <div className="flex h-screen bg-[#FAF9F6]">
             <ChatSidebar
+                onDeleteChat={handleDeleteChat}  
                 chatHistory={chatHistory}
                 onSessionSelect={loadSession}
                 onNewChat={() => isSignedIn && userId && createNewSession(userId)}
             />
 
-            <div className="flex-1 flex flex-col items-center">
-                <div className="w-full max-w-3xl flex-1 overflow-y-auto p-6 space-y-4">
-                    {messages.map((msg, index) => (
-                        <div
-                            key={index}
-                            className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
-                        >
-                            {msg.role === 'assistant' && (
-                                <div className="flex-shrink-0 mr-2">
-                                    <Image
-                                        src={Chatbot_logo}
-                                        alt="Bot"
-                                        width={64}
-                                        height={64}
-                                        className="rounded-full pr-2"
-                                    />
+            <div className="flex-1 flex flex-col">
+                <div className="flex-1 flex flex-col items-center overflow-hidden">
+                    {showHeader ? (
+                        <div className="flex-1 flex items-center justify-center w-full max-w-3xl">
+                            <MiddleLogo />
+                        </div>
+                    ) : (
+                        <div className="w-full max-w-3xl flex-1 overflow-y-auto p-6 space-y-4">
+                            {messages.map((msg, index) => (
+                                <div
+                                    key={index}
+                                    className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                                >
+                                    {msg.role === 'assistant' && (
+                                        <div className="flex-shrink-0 mr-2">
+                                            <Image
+                                                src={Chatbot_logo}
+                                                alt="Bot"
+                                                width={64}
+                                                height={64}
+                                                className="rounded-full pr-2"
+                                            />
+                                        </div>
+                                    )}
+                                    <div
+                                        className={`max-w-xl px-4 py-2 rounded-lg ${msg.role === 'user'
+                                                ? 'bg-green-900 text-white'
+                                                : 'bg-[#F9F6EE] text-green-900 shadow-md'
+                                            }`}
+                                    >
+                                        {/* Remove the repetition of user input */}
+                                        <Markdown>{msg.role === 'assistant' ? msg.content.replace(/^Human:.*?\n/, '') : msg.content}</Markdown>
+                                    </div>
+                                    {msg.role === 'assistant' && (
+                                        <button
+                                            onClick={() => toggleBotSpeech(index)}
+                                            className="ml-2 p-1 rounded-full bg-gray-200 hover:bg-gray-300"
+                                        >
+                                            {isBotSpeechEnabled[index] ? <Volume2 size={16} /> : <VolumeX size={16} />}
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+
+                            {isLoading && (
+                                <div className="flex justify-start">
+                                    <div className="flex-shrink-0 mr-2">
+                                        <Image
+                                            src={Chatbot_logo}
+                                            alt="Bot"
+                                            width={64}
+                                            height={64}
+                                            className="rounded-full pr-2"
+                                        />
+                                    </div>
+                                    <div className="max-w-xl">
+                                        <Skeleton className="h-6 w-[200px] rounded-lg" />
+                                        <Skeleton className="h-4 w-[150px] rounded-lg mt-2" />
+                                    </div>
                                 </div>
                             )}
-                            <div
-                                className={`max-w-xl px-4 py-2 rounded-lg ${
-                                    msg.role === 'user'
-                                        ? 'bg-green-900 text-white'
-                                        : 'bg-[#F9F6EE] text-green-900 shadow-md'
-                                }`}
-                            >
-                                <Markdown>{msg.content}</Markdown>
-                            </div>
-                            {msg.role === 'assistant' && (
-                                <button
-                                    onClick={() => toggleBotSpeech(index)}
-                                    className="ml-2 p-1 rounded-full bg-gray-200 hover:bg-gray-300"
-                                >
-                                    {isBotSpeechEnabled[index] ? <Volume2 size={16} /> : <VolumeX size={16} />}
-                                </button>
-                            )}
-                        </div>
-                    ))}
-
-                    {isLoading && (
-                        <div className="flex justify-start">
-                            <div className="flex-shrink-0 mr-2">
-                                <Image
-                                    src={Chatbot_logo}
-                                    alt="Bot"
-                                    width={64}
-                                    height={64}
-                                    className="rounded-full pr-2"
-                                />
-                            </div>
-                            <div className="max-w-xl">
-                                <Skeleton className="h-6 w-[200px] rounded-lg" />
-                                <Skeleton className="h-4 w-[150px] rounded-lg mt-2" />
-                            </div>
                         </div>
                     )}
                 </div>
 
-                <div className="w-full max-w-3xl pb-6 px-4">
+                <div className="w-full max-w-3xl mx-auto pb-6 px-4">
                     <div className="relative">
                         <input
                             type="text"
@@ -314,9 +349,9 @@ const ChatPage: React.FC = () => {
                         <p className="text-blue-500 mt-2">{voiceInputMessage}</p>
                     )}
                 </div>
-
-                {error && <p className="text-red-500 mt-2">{error}</p>}
             </div>
+
+            {error && <p className="text-red-500 mt-2">{error}</p>}
         </div>
     );
 };

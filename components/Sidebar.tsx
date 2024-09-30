@@ -1,14 +1,26 @@
 import React, { useState } from 'react';
-import { ChevronRight, ChevronLeft, Plus } from 'lucide-react';
+import { ChevronRight, ChevronLeft, Plus, Trash2 } from 'lucide-react';
 
 interface ChatSidebarProps {
     chatHistory: any[]; // Can be more specific with a type if needed
-    onSessionSelect: (sessionId: string) => void; // Changed to sessionId for clarity
+    onSessionSelect: (sessionId: string) => void;
     onNewChat: () => void;
+    onDeleteChat: (sessionId: string) => void; // New prop for delete functionality
 }
 
-const ChatSidebar: React.FC<ChatSidebarProps> = ({ chatHistory, onSessionSelect, onNewChat }) => {
+const ChatSidebar: React.FC<ChatSidebarProps> = ({ chatHistory, onSessionSelect, onNewChat, onDeleteChat }) => {
     const [isOpen, setIsOpen] = useState(false);
+
+    
+
+    const handleDelete = (e: React.MouseEvent, chatId: string) => {
+        e.stopPropagation(); // Prevent triggering the chat selection
+        if (onDeleteChat && typeof onDeleteChat === 'function') {
+            onDeleteChat(chatId);
+        } else {
+            console.warn('onDeleteChat is not provided or is not a function');
+        }
+    };
 
     return (
         <div className="relative h-full bg-opacity-90">
@@ -30,24 +42,30 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ chatHistory, onSessionSelect,
                         {chatHistory.map((chat) => (
                             <li
                                 key={chat.id}
-                                onClick={() => onSessionSelect(chat.id)} // Correctly uses the sessionId
-                                className="cursor-pointer hover:bg-black p-2 rounded transition duration-150 ease-in-out"
+                                onClick={() => onSessionSelect(chat.id)}
+                                className="cursor-pointer hover:bg-black p-2 rounded transition duration-150 ease-in-out flex justify-between items-center"
                             >
-                                {/* Display the chat title or fallback to a default message */}
-                                <p className="font-normal text-sm">
-                                    {chat.title || `Chat on ${new Date(chat.timestamp?.seconds * 1000).toLocaleString()}`}
-                                </p>
-                                {/* Optionally, display a human-readable date below the title */}
-                                <p className="text-sm text-gray-300">
-                                    {chat.timestamp ? new Date(chat.timestamp.seconds * 1000).toLocaleDateString() : 'No date'}
-                                </p>
+                                <div>
+                                    <p className="font-normal text-sm">
+                                        {chat.title || `Chat on ${new Date(chat.timestamp?.seconds * 1000).toLocaleString()}`}
+                                    </p>
+                                    <p className="text-sm text-gray-300">
+                                        {chat.timestamp ? new Date(chat.timestamp.seconds * 1000).toLocaleDateString() : 'No date'}
+                                    </p>
+                                </div>
+                                <button
+                                    onClick={(e) => handleDelete(e, chat.id)}
+                                    className="text-red-500 hover:text-red-700 transition duration-150 ease-in-out"
+                                    aria-label="Delete chat"
+                                >
+                                    <Trash2 size={18} />
+                                </button>
                             </li>
                         ))}
                     </ul>
                 </div>
             </div>
 
-            {/* Toggle button for opening/closing the sidebar */}
             <div
                 className="fixed top-1/2 left-0 -translate-y-1/2 transition-opacity duration-300 cursor-pointer"
                 onClick={() => setIsOpen(!isOpen)}
