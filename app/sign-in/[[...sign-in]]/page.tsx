@@ -2,7 +2,7 @@
 
 import * as Clerk from '@clerk/elements/common'
 import * as SignIn from '@clerk/elements/sign-in'
-import Logo from "../../../components/assets/logo.png"
+import Logo from "../../../components/assets/inverted_logo.png"
 
 export default function SignInPage() {
   return (
@@ -10,38 +10,38 @@ export default function SignInPage() {
       <SignIn.Root>
         <SignIn.Step
           name="start"
-          className="w-full space-y-6 rounded-2xl bg-white px-4 py-10 shadow-md ring-1 ring-black/5 sm:w-96 sm:px-8"
+          className="w-full space-y-6 rounded-2xl bg-green-900 px-4 py-10 bg-opacity-90 shadow-md ring-1 ring-black/5 sm:w-96 sm:px-8"
         >
           <header className="text-center">
-            <img src={Logo.src} alt="Logo" className="mx-auto h-20 w-auto" />
-            <h1 className="mt-4 text-xl font-medium tracking-tight text-zinc-950">
+            <img src={Logo.src} alt="Logo"  className="mx-auto h-20 w-auto" />
+            <h1 className="mt-4 text-2xl font-medium tracking-tight text-zinc-50">
               Sign in to Serenity
             </h1>
           </header>
           <Clerk.GlobalError className="block text-sm text-red-400" />
           <div className="space-y-4">
             <Clerk.Field name="identifier" className="space-y-2">
-              <Clerk.Label className="text-sm font-medium text-zinc-950">Email</Clerk.Label>
+              <Clerk.Label className="text-sm font-medium text-zinc-200">Email</Clerk.Label>
               <Clerk.Input
                 type="email"
                 required
-                className="w-full rounded-md bg-white px-3.5 py-2 text-sm outline-none ring-1 ring-inset ring-zinc-300 hover:ring-zinc-400 focus:ring-[1.5px] focus:ring-zinc-950 data-[invalid]:ring-red-400"
+                className="w-full rounded-md bg-zinc-100 px-3.5 py-2 text-sm outline-none ring-1 ring-inset ring-zinc-300 hover:ring-zinc-400 focus:ring-[1.5px] focus:ring-zinc-950 data-[invalid]:ring-red-400"
               />
               <Clerk.FieldError className="block text-sm text-red-400" />
             </Clerk.Field>
             <Clerk.Field name="password" className="space-y-2">
-              <Clerk.Label className="text-sm font-medium text-zinc-950">Password</Clerk.Label>
+              <Clerk.Label className="text-sm font-medium text-zinc-200">Password</Clerk.Label>
               <Clerk.Input
                 type="password"
                 required
-                className="w-full rounded-md bg-white px-3.5 py-2 text-sm outline-none ring-1 ring-inset ring-zinc-300 hover:ring-zinc-400 focus:ring-[1.5px] focus:ring-zinc-950 data-[invalid]:ring-red-400"
+                className="w-full rounded-md bg-zinc-100 px-3.5 py-2 text-sm outline-none ring-1 ring-inset ring-zinc-800 hover:ring-zinc-400 focus:ring-[1.5px] focus:ring-zinc-950 data-[invalid]:ring-red-400"
               />
               <Clerk.FieldError className="block text-sm text-red-400" />
             </Clerk.Field>
           </div>
           <SignIn.Action
             submit
-            className="w-full rounded-md bg-zinc-950 px-3.5 py-1.5 text-center text-sm font-medium text-white shadow outline-none ring-1 ring-inset ring-zinc-950 hover:bg-zinc-800 focus-visible:outline-[1.5px] focus-visible:outline-offset-2 focus-visible:outline-zinc-950 active:text-white/70"
+            className="w-full rounded-md bg-zinc-800 px-3.5 py-1.5 text-center text-sm font-medium text-white shadow outline-none ring-1 ring-inset ring-zinc-950 hover:bg-zinc-800 focus-visible:outline-[1.5px] focus-visible:outline-offset-2 focus-visible:outline-zinc-950 active:text-white/70"
           >
             Sign In
           </SignIn.Action>
@@ -51,7 +51,7 @@ export default function SignInPage() {
               <div className="w-full border-t border-zinc-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="bg-white px-2 text-zinc-500">Or continue with</span>
+              <span className="bg-green-800 bg-opacity-70 px-2 text-zinc-200">Or continue with</span>
             </div>
           </div>
 
@@ -85,11 +85,11 @@ export default function SignInPage() {
             Sign in with Google
           </Clerk.Connection>
 
-          <p className="text-center text-sm text-zinc-500">
+          <p className="text-center text-sm text-zinc-200">
             Don&apos;t have an account?{' '}
             <a
               href="/sign-up"
-              className="font-medium text-zinc-950 decoration-zinc-950/20 underline-offset-4 outline-none hover:text-zinc-700 hover:underline focus-visible:underline"
+              className="font-medium text-white text-base decoration-zinc-950/20 underline-offset-4 outline-none hover:text-white hover:underline focus-visible:underline"
             >
               Sign up
             </a>

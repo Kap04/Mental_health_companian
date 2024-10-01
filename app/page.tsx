@@ -2,7 +2,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Navbar from "../components/Navbar";
-import Gree from "../components/assets/gree.png";
+import Gree from "../components/assets/help.png";
 import { SerenityCarousel } from "@/components/Caraousel";  // Import the custom carousel
 import Link from 'next/link';
 import Chatbot from "../components/assets/enhanced_bot-removebg-preview.png"

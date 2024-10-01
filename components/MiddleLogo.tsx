@@ -17,19 +17,19 @@ const Header = () => {
           />
         </div>
         <div className="grid grid-cols-2 gap-2 w-full max-w-xl">
-          <Button variant="outline" className="text-black border-white shadow-md hover:bg-gray-800">
+          <Button variant="outline" className="text-black border-white shadow-md hover:bg-gray-200">
             <Wind className='text-blue-500 pr-2 ' />
             Help me relax
           </Button>
-          <Button variant="outline" className="text-black border-white shadow-md hover:bg-gray-800">
+          <Button variant="outline" className="text-black border-white shadow-md hover:bg-gray-200">
             <MessageSquare className='text-yellow-700 pr-2'/>
             I need to talk
           </Button>
-          <Button variant="outline" className="text-black border-white shadow-md hover:bg-gray-800">
+          <Button variant="outline" className="text-black border-white shadow-md hover:bg-gray-200">
             <HeartPulse className='text-red-700 pr-2' />
             I'm feeling anxious
           </Button>
-          <Button variant="outline" className="text-black border-white shadow-md hover:bg-gray-800">
+          <Button variant="outline" className="text-black border-white shadow-md hover:bg-gray-200">
             <Shield  className='text-green-500 pr-2' />
 
             I'm scared about something

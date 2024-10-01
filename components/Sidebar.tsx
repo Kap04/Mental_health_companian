@@ -1,33 +1,44 @@
 import React, { useState } from 'react';
 import { ChevronRight, ChevronLeft, Plus, Trash2 } from 'lucide-react';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+    AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { Button } from "@/components/ui/button";
 
 interface ChatSidebarProps {
     chatHistory: any[]; // Can be more specific with a type if needed
     onSessionSelect: (sessionId: string) => void;
     onNewChat: () => void;
-    onDeleteChat: (sessionId: string) => void; // New prop for delete functionality
+    onDeleteChat: (sessionId: string, confirmed: boolean) => void;
 }
 
 const ChatSidebar: React.FC<ChatSidebarProps> = ({ chatHistory, onSessionSelect, onNewChat, onDeleteChat }) => {
     const [isOpen, setIsOpen] = useState(false);
+    const [chatToDelete, setChatToDelete] = useState<string | null>(null);
 
-    
-
-    const handleDelete = (e: React.MouseEvent, chatId: string) => {
-        e.stopPropagation(); // Prevent triggering the chat selection
+    const handleDelete = (chatId: string) => {
         if (onDeleteChat && typeof onDeleteChat === 'function') {
-            onDeleteChat(chatId);
+            onDeleteChat(chatId, true); // Pass true to indicate user has confirmed
         } else {
             console.warn('onDeleteChat is not provided or is not a function');
         }
+        setChatToDelete(null);
     };
+
 
     return (
         <div className="relative h-full bg-opacity-90">
             <div
-                className={`fixed top-0 left-0 h-full w-64 bg-green-900 text-white p-4 overflow-y-auto transition-transform duration-300 ease-in-out ${
-                    isOpen ? 'translate-x-0' : '-translate-x-64'
-                }`}
+                className={`fixed top-0 left-0 h-full w-64 bg-green-900 text-white p-4 overflow-y-auto transition-transform duration-300 ease-in-out ${isOpen ? 'translate-x-0' : '-translate-x-64'
+                    }`}
             >
                 <div className="h-full flex flex-col">
                     <h2 className="text-3xl pt-2 font-bold pl-4 mb-4">Chat History</h2>
@@ -49,17 +60,36 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({ chatHistory, onSessionSelect,
                                     <p className="font-normal text-sm">
                                         {chat.title || `Chat on ${new Date(chat.timestamp?.seconds * 1000).toLocaleString()}`}
                                     </p>
-                                    <p className="text-sm text-gray-300">
+                                    <p className="text-xs text-gray-300">
                                         {chat.timestamp ? new Date(chat.timestamp.seconds * 1000).toLocaleDateString() : 'No date'}
                                     </p>
                                 </div>
-                                <button
-                                    onClick={(e) => handleDelete(e, chat.id)}
-                                    className="text-red-500 hover:text-red-700 transition duration-150 ease-in-out"
-                                    aria-label="Delete chat"
-                                >
-                                    <Trash2 size={18} />
-                                </button>
+                                <AlertDialog>
+                                    <AlertDialogTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            className="text-white hover:text-red-700 transition duration-150 ease-in-out p-1"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setChatToDelete(chat.id);
+                                            }}
+                                        >
+                                            <Trash2 size={18} />
+                                        </Button>
+                                    </AlertDialogTrigger>
+                                    <AlertDialogContent>
+                                        <AlertDialogHeader>
+                                            <AlertDialogTitle>Are you sure you want to delete {chat.title} chat?</AlertDialogTitle>
+                                            <AlertDialogDescription>
+                                                This action cannot be undone. This will permanently delete your chat history.
+                                            </AlertDialogDescription>
+                                        </AlertDialogHeader>
+                                        <AlertDialogFooter>
+                                            <AlertDialogCancel onClick={() => setChatToDelete(null)}>Cancel</AlertDialogCancel>
+                                            <AlertDialogAction className='bg-green-900' onClick={() => chatToDelete && handleDelete(chatToDelete)}>Delete</AlertDialogAction>
+                                        </AlertDialogFooter>
+                                    </AlertDialogContent>
+                                </AlertDialog>
                             </li>
                         ))}
                     </ul>

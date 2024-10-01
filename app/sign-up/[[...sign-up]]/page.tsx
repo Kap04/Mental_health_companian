@@ -2,7 +2,7 @@
 
 import * as Clerk from '@clerk/elements/common'
 import * as SignUp from '@clerk/elements/sign-up'
-import Logo from "../../../components/assets/logo.png"
+import Logo from "../../../components/assets/inverted_logo.png"
 
 export default function SignUpPage() {
   return (
@@ -10,45 +10,32 @@ export default function SignUpPage() {
       <SignUp.Root>
         <SignUp.Step
           name="start"
-          className="w-full space-y-6 rounded-2xl bg-white px-4 py-10 shadow-md ring-1 ring-black/5 sm:w-96 sm:px-8"
+          className="w-full space-y-6 rounded-2xl bg-green-900 bg-opacity-90 px-4 py-10 shadow-md ring-1 ring-black/5 sm:w-96 sm:px-8"
         >
           <header className="text-center">
-            {/* <svg
-              xmlns="http://www.w3.org/2000/svg"
-              fill="none"
-              viewBox="0 0 40 40"
-              className="mx-auto size-10 text-zinc-950"
-              aria-hidden
-            >
-              <mask id="a" width="40" height="40" x="0" y="0" maskUnits="userSpaceOnUse">
-                <circle cx="20" cy="20" r="20" fill="#D9D9D9" />
-              </mask>
-              <g fill="currentColor" mask="url(#a)">
-                <path d="M43.5 3a.5.5 0 0 0 0-1v1Zm0-1h-46v1h46V2ZM43.5 8a.5.5 0 0 0 0-1v1Zm0-1h-46v1h46V7ZM43.5 13a.5.5 0 0 0 0-1v1Zm0-1h-46v1h46v-1ZM43.5 18a.5.5 0 0 0 0-1v1Zm0-1h-46v1h46v-1ZM43.5 23a.5.5 0 0 0 0-1v1Zm0-1h-46v1h46v-1ZM43.5 28a.5.5 0 0 0 0-1v1Zm0-1h-46v1h46v-1ZM43.5 33a.5.5 0 0 0 0-1v1Zm0-1h-46v1h46v-1ZM43.5 38a.5.5 0 0 0 0-1v1Zm0-1h-46v1h46v-1Z" />
-              </g>
-            </svg> */}
+            
             <img src={Logo.src} alt="Logo" className="mx-auto h-20 w-auto" />
-            <h1 className="mt-4 text-xl font-medium tracking-tight text-zinc-950">
+            <h1 className="mt-4 text-xl font-medium tracking-tight text-zinc-200">
               Create an account
             </h1>
           </header>
           <Clerk.GlobalError className="block text-sm text-red-400" />
           <div className="space-y-4">
             <Clerk.Field name="emailAddress" className="space-y-2">
-              <Clerk.Label className="text-sm font-medium text-zinc-950">Email</Clerk.Label>
+              <Clerk.Label className="text-sm font-medium text-zinc-200">Email</Clerk.Label>
               <Clerk.Input
                 type="email"
                 required
-                className="w-full rounded-md bg-white px-3.5 py-2 text-sm outline-none ring-1 ring-inset ring-zinc-300 hover:ring-zinc-400 focus:ring-[1.5px] focus:ring-zinc-950 data-[invalid]:ring-red-400"
+                className="w-full rounded-md bg-zinc-100 px-3.5 py-2 text-sm outline-none ring-1 ring-inset ring-zinc-300 hover:ring-zinc-400 focus:ring-[1.5px] focus:ring-zinc-950 data-[invalid]:ring-red-400"
               />
               <Clerk.FieldError className="block text-sm text-red-400" />
             </Clerk.Field>
             <Clerk.Field name="password" className="space-y-2">
-              <Clerk.Label className="text-sm font-medium text-zinc-950">Password</Clerk.Label>
+              <Clerk.Label className="text-sm font-medium text-zinc-200">Password</Clerk.Label>
               <Clerk.Input
                 type="password"
                 required
-                className="w-full rounded-md bg-white px-3.5 py-2 text-sm outline-none ring-1 ring-inset ring-zinc-300 hover:ring-zinc-400 focus:ring-[1.5px] focus:ring-zinc-950 data-[invalid]:ring-red-400"
+                className="w-full rounded-md bg-zinc-100 px-3.5 py-2 text-sm outline-none ring-1 ring-inset ring-zinc-300 hover:ring-zinc-400 focus:ring-[1.5px] focus:ring-zinc-950 data-[invalid]:ring-red-400"
               />
               <Clerk.FieldError className="block text-sm text-red-400" />
             </Clerk.Field>
@@ -65,7 +52,7 @@ export default function SignUpPage() {
               <div className="w-full border-t border-zinc-300"></div>
             </div>
             <div className="relative flex justify-center text-sm">
-              <span className="bg-white px-2 text-zinc-500">Or continue with</span>
+              <span className="bg-green-800 bg-opacity-70 px-2 text-zinc-200">Or continue with</span>
             </div>
           </div>
 
@@ -99,11 +86,11 @@ export default function SignUpPage() {
             Sign up with Google
           </Clerk.Connection>
 
-          <p className="text-center text-sm text-zinc-500">
+          <p className="text-center text-sm text-zinc-200">
             Already have an account?{' '}
             <a
               href="/sign-in"
-              className="font-medium text-zinc-950 decoration-zinc-950/20 underline-offset-4 outline-none hover:text-zinc-700 hover:underline focus-visible:underline"
+              className="font-medium text-zinc-100 decoration-zinc-950/20 underline-offset-4 outline-none hover:text-white hover:underline focus-visible:underline"
             >
               Sign in
             </a>

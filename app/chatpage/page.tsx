@@ -1,4 +1,5 @@
 "use client"
+import CrisisButton from '../../components/CrisisButton';  // Adjust the import path as needed
 import React, { useEffect, useState } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Send, Volume2, VolumeX, Mic } from "lucide-react";
@@ -90,10 +91,10 @@ const ChatPage: React.FC = () => {
         }
     };
 
-    const handleDeleteChat = async (sessionId: string) => {
+    const handleDeleteChat = async (sessionId: string, confirmed: boolean = false) => {
         if (!isSignedIn || !userId) return;
         
-        if (window.confirm("Are you sure you want to delete this chat?")) {
+        if (confirmed || window.confirm("Are you sure you want to delete this chat?")) {
             try {
                 // Delete the session document
                 await deleteDoc(doc(db, 'userSessions', userId, 'sessions', sessionId));
@@ -321,6 +322,7 @@ const ChatPage: React.FC = () => {
                 </div>
 
                 <div className="w-full max-w-3xl mx-auto pb-6 px-4">
+                    <CrisisButton input={input}/>
                     <div className="relative">
                         <input
                             type="text"
