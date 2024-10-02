@@ -3,6 +3,7 @@
 import * as Clerk from '@clerk/elements/common'
 import * as SignUp from '@clerk/elements/sign-up'
 import Logo from "../../../components/assets/inverted_logo.png"
+import Image from 'next/image'
 
 export default function SignUpPage() {
   return (
@@ -14,7 +15,7 @@ export default function SignUpPage() {
         >
           <header className="text-center">
             
-            <img src={Logo.src} alt="Logo" className="mx-auto h-20 w-auto" />
+            <Image src={Logo.src} alt="Logo" className="mx-auto h-20 w-auto" />
             <h1 className="mt-4 text-xl font-medium tracking-tight text-zinc-200">
               Create an account
             </h1>

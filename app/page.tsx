@@ -40,7 +40,7 @@ const LandingPage: React.FC = () => {
               Your AI Mental Health Companion
             </h1>
             <p className="text-xl text-green-100 mb-8">
-              Feeling weighed down by anxiety, stress, or overwhelming emotions? You don't have to carry the burden alone. Our platform is designed to gently guide you through the toughest moments, helping you rediscover a sense of peace and balance. With compassionate support and personalized tools, take the first step towards a lighter, brighter you—because you deserve to feel free again.
+              Feeling weighed down by anxiety, stress, or overwhelming emotions? You don&apos;t have to carry the burden alone. Our platform is designed to gently guide you through the toughest moments, helping you rediscover a sense of peace and balance. With compassionate support and personalized tools, take the first step towards a lighter, brighter you—because you deserve to feel free again.
             </p>
             <Link href='/chatpage' className="bg-white text-green-900 font-bold  py-3 px-6 rounded-full hover:bg-green-950 hover:text-white transition duration-300">
               Start Your Journey

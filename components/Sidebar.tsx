@@ -13,12 +13,19 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 
+interface ChatSession {
+    id: string;
+    title: string;
+    timestamp: { seconds: number };
+}
+
 interface ChatSidebarProps {
-    chatHistory: any[]; // Can be more specific with a type if needed
+    chatHistory: ChatSession[];
     onSessionSelect: (sessionId: string) => void;
     onNewChat: () => void;
     onDeleteChat: (sessionId: string, confirmed: boolean) => void;
 }
+
 
 const ChatSidebar: React.FC<ChatSidebarProps> = ({ chatHistory, onSessionSelect, onNewChat, onDeleteChat }) => {
     const [isOpen, setIsOpen] = useState(false);
