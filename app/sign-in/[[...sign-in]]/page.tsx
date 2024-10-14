@@ -14,7 +14,7 @@ export default function SignInPage() {
           className="w-full space-y-6 rounded-2xl bg-green-900 px-4 py-10 bg-opacity-90 shadow-md ring-1 ring-black/5 sm:w-96 sm:px-8"
         >
           <header className="text-center">
-            <Image src={Logo.src} alt="Logo"  className="mx-auto h-20 w-auto" />
+            <Image src={Logo.src} alt="Logo" width={70} height={70} className="mx-auto h-20 w-auto" />
             <h1 className="mt-4 text-2xl font-medium tracking-tight text-zinc-50">
               Sign in to Serenity
             </h1>
