@@ -5,6 +5,7 @@ import Image from 'next/image';
 import Head from 'next/head'
 import Blu from "../../components/assets/hap.png"
 import Navbar from '@/components/Navbar';
+import VoiceInput  from '../_component/VoiceInput';
 
 const AboutPage: React.FC = () => {
   return (
