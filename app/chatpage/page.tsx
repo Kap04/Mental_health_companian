@@ -19,7 +19,12 @@ import WomensCrisisButton from '@/components/WomensCrisisButton';
 
 const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
-const model = genAI.getGenerativeModel({ model: "tunedModels/mentalhealthbotreal-j61lbjfdj54k" });
+const model = genAI.getGenerativeModel(
+  {
+    model: "tunedModels/mentalhealthbotreal-j61lbjfdj54k",
+    systemInstruction: `You are an empathetic AI designed to provide mental health support and emotional assistance. Your role is to listen attentively to users, offer comfort, suggest helpful coping strategies (such as breathing exercises, mindfulness techniques, or calming affirmations), and direct users to mental health resources when necessary. Always use compassionate, non-judgmental, and inclusive language. Be aware of signs of distress, such as expressions of sadness, anxiety, or thoughts of self-harm, and provide appropriate interventions like connecting the user to crisis helplines or encouraging professional support. Ensure privacy and confidentiality in all interactions, and offer personalized advice based on the user's emotional state and needs. Your goal is to create a safe, welcoming space for the user to feel heard and supported.`
+  }
+);
 
 const MAX_HISTORY_LENGTH = 10;
 
@@ -200,6 +205,7 @@ const ChatPage: React.FC = () => {
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, botMessage]);
+
       setIsBotSpeechEnabled((prev) => [...prev, false]);
       setConversationHistory([...updatedHistory, `AI: ${botResponse}`].slice(-MAX_HISTORY_LENGTH));
 
