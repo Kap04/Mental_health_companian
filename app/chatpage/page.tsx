@@ -5,7 +5,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Send, Volume2, VolumeX } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { addDoc, collection, query, orderBy, onSnapshot, doc, updateDoc, getDoc, deleteDoc } from "firebase/firestore";
-import {firestoreDb}  from "../../firebase";
+import { firestoreDb } from "../../firebase";
 import ChatSidebar from "../../components/Sidebar";
 import Markdown from "react-markdown";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -14,8 +14,9 @@ import Chatbot_logo from "../../components/assets/bot.png";
 import MiddleLogo from "../../components/MiddleLogo"
 import VoiceInput from '../_component/VoiceInput';
 import BreathingCircle from "../../components/Breathing-circle"
+import MeditationGif from '@/components/MeditationGif';
 
-const apiKey =  process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
+const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 const model = genAI.getGenerativeModel({ model: "tunedModels/mentalhealthbotreal-j61lbjfdj54k" });
 
@@ -47,6 +48,9 @@ const ChatPage: React.FC = () => {
   const [voiceInputMessage, setVoiceInputMessage] = useState('');
   const [showHeader, setShowHeader] = useState(true);
   const [showBreathingExercise, setShowBreathingExercise] = useState(false);
+  const [showMeditation, setShowMeditation] = useState(false);
+
+
   useEffect(() => {
     if (isSignedIn && user?.id) {
       loadChatSessions(user.id);
@@ -206,6 +210,13 @@ const ChatPage: React.FC = () => {
         setShowBreathingExercise(false);
       }
 
+      // Add meditation check
+      if (/meditat(e|ion|ing)/i.test(botResponse.toLowerCase())) {
+        setShowMeditation(true);
+      } else {
+        setShowMeditation(false);
+      }
+
       await addDoc(collection(firestoreDb, 'userSessions', user.id, 'sessions', sessionId, 'messages'), botMessage);
 
       if (isVoiceInput) {
@@ -290,11 +301,10 @@ const ChatPage: React.FC = () => {
                       </div>
                     )}
                     <div
-                      className={`px-3 py-2 rounded-lg ${
-                        msg.role === 'user'
-                          ? 'bg-green-900 text-white'
-                          : 'bg-[#F9F6EE] text-green-900 shadow-md'
-                      }`}
+                      className={`px-3 py-2 rounded-lg ${msg.role === 'user'
+                        ? 'bg-green-900 text-white'
+                        : 'bg-[#F9F6EE] text-green-900 shadow-md'
+                        }`}
                     >
                       <Markdown>{msg.role === 'assistant' ? msg.content.replace(/^Human:.*?\n/, '') : msg.content}</Markdown>
                     </div>
@@ -311,6 +321,11 @@ const ChatPage: React.FC = () => {
                   {msg.role === 'assistant' && showBreathingExercise && index === messages.length - 1 && (
                     <div className="mt-4 ml-12">
                       <BreathingCircle />
+                    </div>
+                  )}
+                  {msg.role === 'assistant' && showMeditation && index === messages.length - 1 && (
+                    <div className="mt-4 ml-12">
+                      <MeditationGif />
                     </div>
                   )}
                 </div>
