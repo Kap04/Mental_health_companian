@@ -13,6 +13,7 @@ const Navbar: React.FC = () => {
       <div className="flex items-center pr-10 space-x-4">
         <Link href="/" className="text-green-950 hover:text-green-700">Home</Link>
         <Link href="/about" className="text-green-950 hover:text-green-700">About</Link>
+        <Link href="/community" className="text-green-950 hover:text-green-700">Community</Link>
         
         <Link href="/chatpage" className="bg-green-950 text-white text-sm px-4 py-2 rounded-full hover:bg-green-700">
           CHAT

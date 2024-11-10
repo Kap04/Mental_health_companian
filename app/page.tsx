@@ -1,5 +1,5 @@
 "use client"
-import React from 'react';
+
 import Image from 'next/image';
 import Navbar from "../components/Navbar";
 import Gree from "../components/assets/help.png";
@@ -11,11 +11,11 @@ import Logo from "../components/assets/inverted_logo.png"
 import FlickeringGrid from "@/components/ui/flickering-grid";
 import ShinyButton from "@/components/ui/shiny-button";
 import BoxReveal from "@/components/ui/box-reveal";
-import TypingAnimation from "@/components/ui/typing-animation";
 import ShimmerButton from "@/components/ui/shimmer-button";
-// import { useTheme } from "next-themes";
- 
-import { MagicCard } from "@/components/ui/magic-card";
+import React from 'react';
+
+
+
 
 
 const features = [
@@ -62,13 +62,13 @@ const LandingPage: React.FC = () => {
             <BoxReveal boxColor={"rgb(228 228 231)"} duration={0.2}>
 
               <p className="text-xl text-green-100 mb-8">
-                Feeling weighed down by anxiety, stress, or overwhelming emotions? You don't have to carry the burden alone. Our platform is designed to gently guide you through the toughest moments, helping you rediscover a sense of peace and balance. With compassionate support and personalized tools, take the first step towards a lighter, brighter you—because you deserve to feel free again.
+                Feeling weighed down by anxiety, stress, or overwhelming emotions? You don&apos;t have to carry the burden alone. Our platform is designed to gently guide you through the toughest moments, helping you rediscover a sense of peace and balance. With compassionate support and personalized tools, take the first step towards a lighter, brighter you—because you deserve to feel free again.
               </p>
             </BoxReveal>
 
 
 
-            <ShinyButton className="bg-white text-green-900 font-bold py-3 px-6 rounded-full hover:bg-zinc-200 hover:text-white transition duration-300" ><Link href={'/chatpage'}> Start your Journey</Link></ShinyButton>;
+            <Link href={'/chatpage'}><ShinyButton className="bg-white text-green-900 font-bold py-3 px-6 rounded-full hover:bg-zinc-200 hover:text-white transition duration-300" > Start your Journey</ShinyButton></Link>;
 
           </div>
         </section>
@@ -78,11 +78,13 @@ const LandingPage: React.FC = () => {
         <section className="relative h-screen bg-dark-green text-white overflow-hidden">
           <div className="absolute inset-0 flex flex-col justify-center items-center z-10 px-8">
 
-            <TypingAnimation
+            {/* <TypingAnimationComponent
               className="text-8xl font-bold mb-12 text-center"
               duration={200}
               text="Our Features"
-            />
+            /> */}
+            <h1 className="text-8xl font-bold mb-12 text-center"  >Our Features</h1>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-4xl mb-8">
               {features.map((feature, index) => (
                 <div key={index} className="bg-green-800 bg-opacity-80 p-4 text-xl rounded-lg shadow-md flex items-center">

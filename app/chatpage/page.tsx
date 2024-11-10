@@ -14,7 +14,7 @@ import Chatbot_logo from "../../components/assets/bot.png";
 import MiddleLogo from "../../components/MiddleLogo"
 import VoiceInput from '../_component/VoiceInput';
 
-const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
+const apiKey =  process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 const model = genAI.getGenerativeModel({ model: "tunedModels/mentalhealthbotreal-j61lbjfdj54k" });
 
