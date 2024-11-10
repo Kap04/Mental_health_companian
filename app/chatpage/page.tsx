@@ -15,6 +15,7 @@ import MiddleLogo from "../../components/MiddleLogo"
 import VoiceInput from '../_component/VoiceInput';
 import BreathingCircle from "../../components/Breathing-circle"
 import MeditationGif from '@/components/MeditationGif';
+import WomensCrisisButton from '@/components/WomensCrisisButton';
 
 const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
@@ -354,6 +355,7 @@ const ChatPage: React.FC = () => {
 
         <div className="w-full max-w-3xl mx-auto pb-4 px-4">
           <CrisisButton input={input} />
+          <WomensCrisisButton input={input} />
           <div className="relative">
             <input
               type="text"

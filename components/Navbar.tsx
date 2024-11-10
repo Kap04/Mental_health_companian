@@ -8,10 +8,10 @@ const Navbar: React.FC = () => {
     <nav className="flex items-center justify-between bg-white shadow-md px-4 py-2">
       <div className="flex ml-10 items-center">
         <Image src={Logo} alt="Serenity Logo" width={32} height={32} />
-        <span className="ml-2 text-xl text-green-950 font-bold">Serenity</span>
+        <Link href="/"> <span className="ml-2 text-xl text-green-950 font-bold">Serenity</span></Link>
       </div>
       <div className="flex items-center pr-10 space-x-4">
-        <Link href="/" className="text-green-950 hover:text-green-700">Home</Link>
+        <Link href="/feedback" className="text-green-950 hover:text-green-700">Feedback</Link>
         <Link href="/about" className="text-green-950 hover:text-green-700">About</Link>
         <Link href="/community" className="text-green-950 hover:text-green-700">Community</Link>
         
