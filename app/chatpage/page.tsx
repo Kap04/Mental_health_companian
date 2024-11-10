@@ -13,6 +13,7 @@ import Image from "next/image";
 import Chatbot_logo from "../../components/assets/bot.png";
 import MiddleLogo from "../../components/MiddleLogo"
 import VoiceInput from '../_component/VoiceInput';
+import BreathingCircle from "../../components/Breathing-circle"
 
 const apiKey =  process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
@@ -45,6 +46,7 @@ const ChatPage: React.FC = () => {
   const [isVoiceInput, setIsVoiceInput] = useState(false);
   const [voiceInputMessage, setVoiceInputMessage] = useState('');
   const [showHeader, setShowHeader] = useState(true);
+  const [showBreathingExercise, setShowBreathingExercise] = useState(false);
   useEffect(() => {
     if (isSignedIn && user?.id) {
       loadChatSessions(user.id);
@@ -196,6 +198,14 @@ const ChatPage: React.FC = () => {
       setIsBotSpeechEnabled((prev) => [...prev, false]);
       setConversationHistory([...updatedHistory, `AI: ${botResponse}`].slice(-MAX_HISTORY_LENGTH));
 
+      // Check if the bot response contains the word "breath"
+      //if (botResponse.toLowerCase().includes('breathing')) {
+      if (/breath(ing|s)?/i.test(botResponse.toLowerCase())) {
+        setShowBreathingExercise(true);
+      } else {
+        setShowBreathingExercise(false);
+      }
+
       await addDoc(collection(firestoreDb, 'userSessions', user.id, 'sessions', sessionId, 'messages'), botMessage);
 
       if (isVoiceInput) {
@@ -280,22 +290,29 @@ const ChatPage: React.FC = () => {
                       </div>
                     )}
                     <div
-                      className={`px-3 py-2 rounded-lg ${msg.role === 'user'
-                        ? 'bg-green-900 text-white'
-                        : 'bg-[#F9F6EE] text-green-900 shadow-md'
-                        }`}
+                      className={`px-3 py-2 rounded-lg ${
+                        msg.role === 'user'
+                          ? 'bg-green-900 text-white'
+                          : 'bg-[#F9F6EE] text-green-900 shadow-md'
+                      }`}
                     >
                       <Markdown>{msg.role === 'assistant' ? msg.content.replace(/^Human:.*?\n/, '') : msg.content}</Markdown>
                     </div>
                     {msg.role === 'assistant' && (
                       <button
                         onClick={() => toggleBotSpeech(index)}
-                        className="mt-1 p-1  rounded-full bg-gray-200 hover:bg-gray-300"
+                        className="mt-1 p-1 rounded-full bg-gray-200 hover:bg-gray-300"
+                        aria-label={isBotSpeechEnabled[index] ? "Disable text-to-speech" : "Enable text-to-speech"}
                       >
                         {isBotSpeechEnabled[index] ? <Volume2 size={16} /> : <VolumeX size={16} />}
                       </button>
                     )}
                   </div>
+                  {msg.role === 'assistant' && showBreathingExercise && index === messages.length - 1 && (
+                    <div className="mt-4 ml-12">
+                      <BreathingCircle />
+                    </div>
+                  )}
                 </div>
               ))}
 
@@ -340,6 +357,7 @@ const ChatPage: React.FC = () => {
               <button
                 onClick={() => handleSend()}
                 className="inline-flex items-center justify-center rounded-full p-2 transition duration-500 ease-in-out text-white bg-green-900 hover:bg-green-500 focus:outline-none"
+                aria-label="Send message"
               >
                 <Send size={20} />
               </button>

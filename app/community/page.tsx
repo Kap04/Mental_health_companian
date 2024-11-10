@@ -101,19 +101,19 @@ export default function CommunityPage() {
             {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex ${message.userId === user?.id ? 'justify-end' : 'justify-start'}`}
+                className={`flex ${message.userId === user?.id ? 'justify-start' : 'justify-start'}`}
               >
                 <div className={`flex items-start max-w-[70%] ${message.userId === user?.id ? 'flex-row-reverse' : 'flex-row'}`}>
                   {message.userId !== user?.id && (
                     <div className={`flex-shrink-0 ${message.userId === user?.id ? 'ml-2' : 'mr-2'}`}>
-                      <Image
+                      {/* <Image
                         src={message.imageUrl || "/placeholder.svg"}
                         alt={message.username}
                         width={30}
                         height={30}
                         className="rounded-full"
                         unoptimized
-                      />
+                      /> */}
                     </div>
                   )}
                   <div
@@ -122,7 +122,7 @@ export default function CommunityPage() {
                         : 'bg-white text-green-950 shadow-md'
                       }`}
                   >
-                    <p className="font-semibold text-xs">{message.username}</p>
+                    <p className="font-semibold text-sm">{message.username}</p>
                     <div className="text-base prose prose-sm max-w-none">
                       <Markdown>{message.text}</Markdown>
                     </div>
