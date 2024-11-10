@@ -5,7 +5,7 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Send, Volume2, VolumeX } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { addDoc, collection, query, orderBy, onSnapshot, doc, updateDoc, getDoc, deleteDoc } from "firebase/firestore";
-import { db } from "../../firebase";
+import {firestoreDb}  from "../../firebase";
 import ChatSidebar from "../../components/Sidebar";
 import Markdown from "react-markdown";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -53,7 +53,7 @@ const ChatPage: React.FC = () => {
 
   const loadChatSessions = async (userId: string) => {
     try {
-      const sessionsRef = collection(db, 'userSessions', userId, 'sessions');
+      const sessionsRef = collection(firestoreDb, 'userSessions', userId, 'sessions');
       const q = query(sessionsRef, orderBy('timestamp', 'desc'));
       onSnapshot(q, (querySnapshot) => {
         const sessions = querySnapshot.docs.map(doc => ({
@@ -71,7 +71,7 @@ const ChatPage: React.FC = () => {
 
   const createNewSession = async (userId: string) => {
     try {
-      const newSessionRef = await addDoc(collection(db, 'userSessions', userId, 'sessions'), {
+      const newSessionRef = await addDoc(collection(firestoreDb, 'userSessions', userId, 'sessions'), {
         title: conversationHistory[0] || 'New Chat Session',
         timestamp: new Date(),
       });
@@ -90,7 +90,7 @@ const ChatPage: React.FC = () => {
     if (!isSignedIn || !user?.id) return;
     try {
       setCurrentSessionId(sessionId);
-      const messagesRef = collection(db, 'userSessions', user.id, 'sessions', sessionId, 'messages');
+      const messagesRef = collection(firestoreDb, 'userSessions', user.id, 'sessions', sessionId, 'messages');
       const q = query(messagesRef, orderBy('timestamp', 'asc'));
       onSnapshot(q, (querySnapshot) => {
         const chatMessages = querySnapshot.docs.map(doc => ({
@@ -120,7 +120,7 @@ const ChatPage: React.FC = () => {
 
     if (confirmed || window.confirm("Are you sure you want to delete this chat?")) {
       try {
-        await deleteDoc(doc(db, 'userSessions', user.id, 'sessions', sessionId));
+        await deleteDoc(doc(firestoreDb, 'userSessions', user.id, 'sessions', sessionId));
 
         if (sessionId === currentSessionId) {
           createNewSession(user.id);
@@ -158,7 +158,7 @@ const ChatPage: React.FC = () => {
       let isNewSession = false;
 
       if (!sessionId) {
-        const newSessionRef = await addDoc(collection(db, 'userSessions', user.id, 'sessions'), {
+        const newSessionRef = await addDoc(collection(firestoreDb, 'userSessions', user.id, 'sessions'), {
           title: input.trim(),
           timestamp: new Date(),
         });
@@ -167,10 +167,10 @@ const ChatPage: React.FC = () => {
         isNewSession = true;
       }
 
-      await addDoc(collection(db, 'userSessions', user.id, 'sessions', sessionId, 'messages'), userMessage);
+      await addDoc(collection(firestoreDb, 'userSessions', user.id, 'sessions', sessionId, 'messages'), userMessage);
 
       if (!isNewSession) {
-        const sessionRef = doc(db, 'userSessions', user.id, 'sessions', sessionId);
+        const sessionRef = doc(firestoreDb, 'userSessions', user.id, 'sessions', sessionId);
         const sessionDoc = await getDoc(sessionRef);
         const sessionData = sessionDoc.data();
 
@@ -196,7 +196,7 @@ const ChatPage: React.FC = () => {
       setIsBotSpeechEnabled((prev) => [...prev, false]);
       setConversationHistory([...updatedHistory, `AI: ${botResponse}`].slice(-MAX_HISTORY_LENGTH));
 
-      await addDoc(collection(db, 'userSessions', user.id, 'sessions', sessionId, 'messages'), botMessage);
+      await addDoc(collection(firestoreDb, 'userSessions', user.id, 'sessions', sessionId, 'messages'), botMessage);
 
       if (isVoiceInput) {
         speakResponse(botResponse);
@@ -222,40 +222,6 @@ const ChatPage: React.FC = () => {
     }
   };
 
-  // const startVoiceInput = () => {
-  //   setVoiceInputMessage('Listening...');
-  
-  //   const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
-  //   if (!SpeechRecognition) {
-  //     setVoiceInputMessage('Speech recognition is not supported in this browser.');
-  //     return;
-  //   }
-  
-  //   const recognition = new SpeechRecognition();
-  
-  //   recognition.onresult = (event: Event) => {
-  //     const speechEvent = event as unknown as { results: SpeechRecognitionResultList };
-  //     const transcript = speechEvent.results[0][0].transcript;
-  //     setInput(transcript);
-  //     setIsVoiceInput(true);
-  //     setVoiceInputMessage('');
-  //   };
-  
-  //   recognition.onerror = (event: Event) => {
-  //     const errorEvent = event as unknown as { error: string };
-  //     console.error('Speech recognition error', errorEvent.error);
-  //     setVoiceInputMessage('Error in speech recognition. Please try again.');
-  //   };
-  
-  //   recognition.onend = () => {
-  //     if (!input) {
-  //       setVoiceInputMessage('No speech detected. Please try again.');
-  //     }
-  //   };
-  
-  //   recognition.start();
-  // };
-  
 
 
   const speakResponse = (text: string) => {
