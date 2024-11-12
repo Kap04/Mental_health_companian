@@ -2,8 +2,6 @@
 import CrisisButton from '../../components/CrisisButton';
 import React, { useEffect, useState } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
-
-
 import { Send, Volume2, VolumeX } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { addDoc, collection, query, orderBy, onSnapshot, doc, updateDoc, getDoc, deleteDoc } from "firebase/firestore";
@@ -14,10 +12,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import Image from "next/image";
 import Chatbot_logo from "../../components/assets/bot.png";
 import MiddleLogo from "../../components/MiddleLogo"
-import VoiceInput from '../_component/VoiceInput';
+import VoiceInput from '../../components/VoiceInput';
 import BreathingCircle from "../../components/Breathing-circle"
 import MeditationGif from '@/components/MeditationGif';
 import WomensCrisisButton from '@/components/WomensCrisisButton';
+import Navbar from '@/components/Navbar';
 
 const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
@@ -292,6 +291,9 @@ const ChatPage: React.FC = () => {
 
 
   return (
+    <div>
+
+      {/* <Navbar/> */}
     <div className="flex flex-col md:flex-row h-screen bg-[#FAF9F6]">
       <ChatSidebar
         onDeleteChat={handleDeleteChat}
@@ -301,6 +303,7 @@ const ChatPage: React.FC = () => {
       />
 
       <div className="flex-1 flex flex-col">
+        <Navbar/>
         <div className="flex-1 flex flex-col items-center overflow-hidden">
           {showHeader ? (
             <div className="flex-1 flex items-center justify-center w-full max-w-3xl p-4">
@@ -322,7 +325,7 @@ const ChatPage: React.FC = () => {
                           width={40}
                           height={40}
                           className="rounded-full"
-                        />
+                          />
                       </div>
                     )}
                     <div
@@ -330,7 +333,7 @@ const ChatPage: React.FC = () => {
                         ? 'bg-green-900 text-white'
                         : 'bg-[#F9F6EE] text-green-950 shadow-md'
                         }`}
-                    >
+                        >
                       <Markdown>{msg.role === 'assistant' ? msg.content.replace(/^Human:.*?\n/, '') : msg.content}</Markdown>
                     </div>
                     {msg.role === 'assistant' && (
@@ -338,7 +341,7 @@ const ChatPage: React.FC = () => {
                         onClick={() => toggleBotSpeech(index)}
                         className="mt-1 p-1 rounded-full bg-gray-200 hover:bg-gray-300"
                         aria-label={isBotSpeechEnabled[index] ? "Disable text-to-speech" : "Enable text-to-speech"}
-                      >
+                        >
                         {isBotSpeechEnabled[index] ? <Volume2 size={16} /> : <VolumeX size={16} />}
                       </button>
                     )}
@@ -365,7 +368,7 @@ const ChatPage: React.FC = () => {
                       width={40}
                       height={40}
                       className="rounded-full"
-                    />
+                      />
                   </div>
                   <div className="max-w-[80%] md:max-w-xl">
                     <Skeleton className="h-4 w-[150px] rounded-lg" />
@@ -388,18 +391,18 @@ const ChatPage: React.FC = () => {
               onKeyPress={handleKeyPress}
               placeholder="Type your message..."
               className="w-full focus:outline-none focus:placeholder-gray-400 text-black placeholder-gray-400 pl-4 pr-20 py-3 rounded-full bg-white shadow-md"
-            />
+              />
             <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
               <VoiceInput
                 onTranscript={handleVoiceTranscript}
                 setIsVoiceInput={setIsVoiceInput}
                 setVoiceInputMessage={setVoiceInputMessage}
-              />
+                />
               <button
                 onClick={() => handleSend()}
                 className="inline-flex items-center justify-center rounded-full p-2 transition duration-500 ease-in-out text-white bg-green-900 hover:bg-green-500 focus:outline-none"
                 aria-label="Send message"
-              >
+                >
                 <Send size={20} />
               </button>
             </div>
@@ -412,6 +415,7 @@ const ChatPage: React.FC = () => {
 
       {error && <p className="text-red-500 mt-2 text-sm">{error}</p>}
     </div>
+          </div>
   );
 };
 

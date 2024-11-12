@@ -35,6 +35,7 @@ export default function FeedbackPage() {
 
   return (
     <div className="min-h-screen bg-gray-100">
+      <Navbar/>
 
       <main className="container mx-auto px-4 py-8">
         <h1 className="text-5xl font-bold mb-6 text-green-950 text-center">Feedback Form</h1>
