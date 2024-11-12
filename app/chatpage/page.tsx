@@ -2,6 +2,8 @@
 import CrisisButton from '../../components/CrisisButton';
 import React, { useEffect, useState } from "react";
 import { GoogleGenerativeAI } from "@google/generative-ai";
+
+
 import { Send, Volume2, VolumeX } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { addDoc, collection, query, orderBy, onSnapshot, doc, updateDoc, getDoc, deleteDoc } from "firebase/firestore";
@@ -21,8 +23,19 @@ const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
 const model = genAI.getGenerativeModel(
   {
+    // model: "gemini-1.5-flash",
     model: "tunedModels/mentalhealthbotreal-j61lbjfdj54k",
-    systemInstruction: `You are an empathetic AI designed to provide mental health support and emotional assistance. Your role is to listen attentively to users, offer comfort, suggest helpful coping strategies (such as breathing exercises, mindfulness techniques, or calming affirmations), and direct users to mental health resources when necessary. Always use compassionate, non-judgmental, and inclusive language. Be aware of signs of distress, such as expressions of sadness, anxiety, or thoughts of self-harm, and provide appropriate interventions like connecting the user to crisis helplines or encouraging professional support. Ensure privacy and confidentiality in all interactions, and offer personalized advice based on the user's emotional state and needs. Your goal is to create a safe, welcoming space for the user to feel heard and supported.`
+    //systemInstruction: `You are an empathetic AI designed to provide mental health support and emotional assistance. Your role is to listen attentively to users, offer comfort, suggest helpful coping strategies (such as breathing exercises, mindfulness techniques, or calming affirmations), and direct users to mental health resources when necessary. Always use compassionate, non-judgmental, and inclusive language. Be aware of signs of distress, such as expressions of sadness, anxiety, or thoughts of self-harm, and provide appropriate interventions like connecting the user to crisis helplines or encouraging professional support. Ensure privacy and confidentiality in all interactions, and offer personalized advice based on the user's emotional state and needs. Your goal is to create a safe, welcoming space for the user to feel heard and supported.`,
+    // tools: [
+    //   {
+    //     googleSearchRetrieval: {
+    //       dynamicRetrievalConfig: {
+    //         mode: DynamicRetrievalMode.MODE_DYNAMIC,
+    //         dynamicThreshold: 0.7,
+    //       },
+    //     },
+    //   },
+    // ],  
   }
 );
 
@@ -196,6 +209,13 @@ const ChatPage: React.FC = () => {
       const context = updatedHistory.join('\n');
       const result = await model.generateContent(context);
       const botResponse = result.response.text();
+      
+      //grounding 
+      // if (result.response?.candidates && result.response.candidates.length > 0) {
+      //   console.log(result.response.candidates[0].groundingMetadata);
+      // } else {
+      //   console.log("No candidates found in the response.");
+      // }
 
       if (!botResponse) throw new Error('Invalid response from AI');
 
@@ -209,8 +229,6 @@ const ChatPage: React.FC = () => {
       setIsBotSpeechEnabled((prev) => [...prev, false]);
       setConversationHistory([...updatedHistory, `AI: ${botResponse}`].slice(-MAX_HISTORY_LENGTH));
 
-      // Check if the bot response contains the word "breath"
-      //if (botResponse.toLowerCase().includes('breathing')) {
       if (/breath(ing|s)?/i.test(botResponse.toLowerCase())) {
         setShowBreathingExercise(true);
       } else {
@@ -310,7 +328,7 @@ const ChatPage: React.FC = () => {
                     <div
                       className={`px-3 py-2 rounded-lg ${msg.role === 'user'
                         ? 'bg-green-900 text-white'
-                        : 'bg-[#F9F6EE] text-green-900 shadow-md'
+                        : 'bg-[#F9F6EE] text-green-950 shadow-md'
                         }`}
                     >
                       <Markdown>{msg.role === 'assistant' ? msg.content.replace(/^Human:.*?\n/, '') : msg.content}</Markdown>
