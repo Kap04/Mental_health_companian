@@ -9,9 +9,9 @@ import Image from "next/image"
 import { Send } from "lucide-react"
 import Markdown from "react-markdown"
 import Navbar from "@/components/Navbar"
-import Chatbot_logo from "../../components/assets/bot.png"; 
+import Chatbot_logo from "../../components/assets/bot.png"
 import { realtimeDb } from "@/firebase" 
-import { ref, push, onValue, off, set } from 'firebase/database'
+import { ref, push, onValue, off, set, DataSnapshot } from 'firebase/database'
 
 import { GoogleGenerativeAI } from "@google/generative-ai"
 
@@ -30,11 +30,19 @@ interface Message {
   imageUrl?: string
 }
 
+interface FirebaseMessage {
+  text: string
+  userId: string
+  username: string
+  createdAt: number
+  imageUrl?: string
+}
+
 export default function CommunityPage() {
   const { user, isSignedIn } = useUser()
   const [messages, setMessages] = useState<Message[]>([])
   const [input, setInput] = useState('')
-  const [error, setError] = useState('')
+  const [errorMessage, setErrorMessage] = useState('')  // Renamed from 'error' to avoid unused variable
   const [isLoading, setIsLoading] = useState(false)
   const messagesEndRef = useRef<HTMLDivElement>(null)
 
@@ -46,12 +54,13 @@ export default function CommunityPage() {
     if (isSignedIn && user?.id) {
       const messagesRef = ref(realtimeDb, 'communityChat')
 
-      const messageListener = onValue(messagesRef, (snapshot) => {
+      // Store listener cleanup function
+      const cleanup = onValue(messagesRef, (snapshot: DataSnapshot) => {
         const data = snapshot.val()
         if (data) {
-          const messageList = Object.entries(data).map(([id, message]: [string, any]) => ({
+          const messageList = Object.entries(data).map(([id, message]) => ({
             id,
-            ...message,
+            ...(message as FirebaseMessage),
           }))
           messageList.sort((a, b) => a.createdAt - b.createdAt) 
           setMessages(messageList)
@@ -59,11 +68,12 @@ export default function CommunityPage() {
         }
       }, (error) => {
         console.error("Error in message listener:", error)
-        setError('Failed to load messages. Please try again.')
+        setErrorMessage('Failed to load messages. Please try again.')
       })
 
       return () => {
         off(messagesRef)
+        cleanup()
       }
     }
   }, [isSignedIn, user?.id])
@@ -92,14 +102,12 @@ export default function CommunityPage() {
           createdAt: Date.now(),
         };
   
-        // Push both the user message and the AI response to Firebase
         await set(push(ref(realtimeDb, 'communityChat'), userMessage), userMessage);
         await set(push(ref(realtimeDb, 'communityChat'), aiMessage), aiMessage);
   
-        setInput(''); // Clear input after message is sent
+        setInput('');
       } else {
-        // Regular user message handling
-        const messageData = {
+        const messageData: FirebaseMessage = {
           text: input,
           userId: user.id,
           username: user.username || user.firstName || 'Anonymous',
@@ -108,18 +116,15 @@ export default function CommunityPage() {
         };
   
         await set(push(ref(realtimeDb, 'communityChat'), messageData), messageData);
-        setInput(''); // Clear input after message is sent
+        setInput('');
       }
     } catch (error) {
       console.error('Error sending message:', error);
-      setError('Failed to send message. Please try again.');
+      setErrorMessage('Failed to send message. Please try again.');
     } finally {
       setIsLoading(false);
     }
   };
-  
-
- 
 
   const generateAIResponse = async (userInput: string, messages: Message[]) => {
     try {
@@ -132,14 +137,21 @@ export default function CommunityPage() {
     }
   }
 
+
   return (
     <div className="flex flex-col h-screen bg-white">
     <Navbar />
     <header className="bg-white p-4 text-green-900">
-      <div className="max-w-4xl mx-auto">
-        <h1 className="text-2xl font-bold">Community Chat</h1>
-      </div>
-    </header>
+        <div className="max-w-4xl mx-auto">
+          <h1 className="text-2xl font-bold">Community Chat</h1>
+          {/* Add error message display */}
+          {errorMessage && (
+            <div className="mt-2 p-2 bg-red-100 text-red-700 rounded-md">
+              {errorMessage}
+            </div>
+          )}
+        </div>
+      </header>
     <main className="flex-grow overflow-y-auto p-4">
       <div className="max-w-4xl mx-auto">
         <div className="space-y-4">
@@ -207,6 +219,9 @@ export default function CommunityPage() {
             onChange={(e) => setInput(e.target.value)}
             placeholder="Type your message"
             className="w-full p-2 border rounded-md text-green-900"
+            aria-invalid={!!errorMessage}
+              // Add aria-describedby if there's an error
+              aria-describedby={errorMessage ? "error-message" : undefined}
           />
           <button
             type="submit"
