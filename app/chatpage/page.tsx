@@ -5,18 +5,38 @@ import { GoogleGenerativeAI } from "@google/generative-ai";
 import { Send, Volume2, VolumeX } from "lucide-react";
 import { useUser } from "@clerk/nextjs";
 import { addDoc, collection, query, orderBy, onSnapshot, doc, updateDoc, getDoc, deleteDoc } from "firebase/firestore";
-import { db } from "../../firebase";
+import { firestoreDb } from "../../firebase";
 import ChatSidebar from "../../components/Sidebar";
 import Markdown from "react-markdown";
 import { Skeleton } from "@/components/ui/skeleton";
 import Image from "next/image";
 import Chatbot_logo from "../../components/assets/bot.png";
 import MiddleLogo from "../../components/MiddleLogo"
-import VoiceInput from '../_component/VoiceInput';
+import VoiceInput from '../../components/VoiceInput';
+import BreathingCircle from "../../components/Breathing-circle"
+import MeditationGif from '@/components/MeditationGif';
+import WomensCrisisButton from '@/components/WomensCrisisButton';
+import Navbar from '@/components/Navbar';
 
 const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
-const model = genAI.getGenerativeModel({ model: "tunedModels/mentalhealthbotreal-j61lbjfdj54k" });
+const model = genAI.getGenerativeModel(
+  {
+    // model: "gemini-1.5-flash",
+    model: "tunedModels/mentalhealthbotreal-j61lbjfdj54k",
+    //systemInstruction: `You are an empathetic AI designed to provide mental health support and emotional assistance. Your role is to listen attentively to users, offer comfort, suggest helpful coping strategies (such as breathing exercises, mindfulness techniques, or calming affirmations), and direct users to mental health resources when necessary. Always use compassionate, non-judgmental, and inclusive language. Be aware of signs of distress, such as expressions of sadness, anxiety, or thoughts of self-harm, and provide appropriate interventions like connecting the user to crisis helplines or encouraging professional support. Ensure privacy and confidentiality in all interactions, and offer personalized advice based on the user's emotional state and needs. Your goal is to create a safe, welcoming space for the user to feel heard and supported.`,
+    // tools: [
+    //   {
+    //     googleSearchRetrieval: {
+    //       dynamicRetrievalConfig: {
+    //         mode: DynamicRetrievalMode.MODE_DYNAMIC,
+    //         dynamicThreshold: 0.7,
+    //       },
+    //     },
+    //   },
+    // ],  
+  }
+);
 
 const MAX_HISTORY_LENGTH = 10;
 
@@ -45,6 +65,10 @@ const ChatPage: React.FC = () => {
   const [isVoiceInput, setIsVoiceInput] = useState(false);
   const [voiceInputMessage, setVoiceInputMessage] = useState('');
   const [showHeader, setShowHeader] = useState(true);
+  const [showBreathingExercise, setShowBreathingExercise] = useState(false);
+  const [showMeditation, setShowMeditation] = useState(false);
+
+
   useEffect(() => {
     if (isSignedIn && user?.id) {
       loadChatSessions(user.id);
@@ -53,7 +77,7 @@ const ChatPage: React.FC = () => {
 
   const loadChatSessions = async (userId: string) => {
     try {
-      const sessionsRef = collection(db, 'userSessions', userId, 'sessions');
+      const sessionsRef = collection(firestoreDb, 'userSessions', userId, 'sessions');
       const q = query(sessionsRef, orderBy('timestamp', 'desc'));
       onSnapshot(q, (querySnapshot) => {
         const sessions = querySnapshot.docs.map(doc => ({
@@ -71,7 +95,7 @@ const ChatPage: React.FC = () => {
 
   const createNewSession = async (userId: string) => {
     try {
-      const newSessionRef = await addDoc(collection(db, 'userSessions', userId, 'sessions'), {
+      const newSessionRef = await addDoc(collection(firestoreDb, 'userSessions', userId, 'sessions'), {
         title: conversationHistory[0] || 'New Chat Session',
         timestamp: new Date(),
       });
@@ -90,7 +114,7 @@ const ChatPage: React.FC = () => {
     if (!isSignedIn || !user?.id) return;
     try {
       setCurrentSessionId(sessionId);
-      const messagesRef = collection(db, 'userSessions', user.id, 'sessions', sessionId, 'messages');
+      const messagesRef = collection(firestoreDb, 'userSessions', user.id, 'sessions', sessionId, 'messages');
       const q = query(messagesRef, orderBy('timestamp', 'asc'));
       onSnapshot(q, (querySnapshot) => {
         const chatMessages = querySnapshot.docs.map(doc => ({
@@ -120,7 +144,7 @@ const ChatPage: React.FC = () => {
 
     if (confirmed || window.confirm("Are you sure you want to delete this chat?")) {
       try {
-        await deleteDoc(doc(db, 'userSessions', user.id, 'sessions', sessionId));
+        await deleteDoc(doc(firestoreDb, 'userSessions', user.id, 'sessions', sessionId));
 
         if (sessionId === currentSessionId) {
           createNewSession(user.id);
@@ -158,7 +182,7 @@ const ChatPage: React.FC = () => {
       let isNewSession = false;
 
       if (!sessionId) {
-        const newSessionRef = await addDoc(collection(db, 'userSessions', user.id, 'sessions'), {
+        const newSessionRef = await addDoc(collection(firestoreDb, 'userSessions', user.id, 'sessions'), {
           title: input.trim(),
           timestamp: new Date(),
         });
@@ -167,10 +191,10 @@ const ChatPage: React.FC = () => {
         isNewSession = true;
       }
 
-      await addDoc(collection(db, 'userSessions', user.id, 'sessions', sessionId, 'messages'), userMessage);
+      await addDoc(collection(firestoreDb, 'userSessions', user.id, 'sessions', sessionId, 'messages'), userMessage);
 
       if (!isNewSession) {
-        const sessionRef = doc(db, 'userSessions', user.id, 'sessions', sessionId);
+        const sessionRef = doc(firestoreDb, 'userSessions', user.id, 'sessions', sessionId);
         const sessionDoc = await getDoc(sessionRef);
         const sessionData = sessionDoc.data();
 
@@ -184,6 +208,13 @@ const ChatPage: React.FC = () => {
       const context = updatedHistory.join('\n');
       const result = await model.generateContent(context);
       const botResponse = result.response.text();
+      
+      //grounding 
+      // if (result.response?.candidates && result.response.candidates.length > 0) {
+      //   console.log(result.response.candidates[0].groundingMetadata);
+      // } else {
+      //   console.log("No candidates found in the response.");
+      // }
 
       if (!botResponse) throw new Error('Invalid response from AI');
 
@@ -193,10 +224,24 @@ const ChatPage: React.FC = () => {
         timestamp: new Date(),
       };
       setMessages((prev) => [...prev, botMessage]);
+
       setIsBotSpeechEnabled((prev) => [...prev, false]);
       setConversationHistory([...updatedHistory, `AI: ${botResponse}`].slice(-MAX_HISTORY_LENGTH));
 
-      await addDoc(collection(db, 'userSessions', user.id, 'sessions', sessionId, 'messages'), botMessage);
+      if (/breath(ing|s)?/i.test(botResponse.toLowerCase())) {
+        setShowBreathingExercise(true);
+      } else {
+        setShowBreathingExercise(false);
+      }
+
+      // Add meditation check
+      if (/meditat(e|ion|ing)/i.test(botResponse.toLowerCase())) {
+        setShowMeditation(true);
+      } else {
+        setShowMeditation(false);
+      }
+
+      await addDoc(collection(firestoreDb, 'userSessions', user.id, 'sessions', sessionId, 'messages'), botMessage);
 
       if (isVoiceInput) {
         speakResponse(botResponse);
@@ -222,40 +267,6 @@ const ChatPage: React.FC = () => {
     }
   };
 
-  // const startVoiceInput = () => {
-  //   setVoiceInputMessage('Listening...');
-  
-  //   const SpeechRecognition = window.SpeechRecognition || (window as any).webkitSpeechRecognition;
-  //   if (!SpeechRecognition) {
-  //     setVoiceInputMessage('Speech recognition is not supported in this browser.');
-  //     return;
-  //   }
-  
-  //   const recognition = new SpeechRecognition();
-  
-  //   recognition.onresult = (event: Event) => {
-  //     const speechEvent = event as unknown as { results: SpeechRecognitionResultList };
-  //     const transcript = speechEvent.results[0][0].transcript;
-  //     setInput(transcript);
-  //     setIsVoiceInput(true);
-  //     setVoiceInputMessage('');
-  //   };
-  
-  //   recognition.onerror = (event: Event) => {
-  //     const errorEvent = event as unknown as { error: string };
-  //     console.error('Speech recognition error', errorEvent.error);
-  //     setVoiceInputMessage('Error in speech recognition. Please try again.');
-  //   };
-  
-  //   recognition.onend = () => {
-  //     if (!input) {
-  //       setVoiceInputMessage('No speech detected. Please try again.');
-  //     }
-  //   };
-  
-  //   recognition.start();
-  // };
-  
 
 
   const speakResponse = (text: string) => {
@@ -280,6 +291,9 @@ const ChatPage: React.FC = () => {
 
 
   return (
+    <div>
+
+      {/* <Navbar/> */}
     <div className="flex flex-col md:flex-row h-screen bg-[#FAF9F6]">
       <ChatSidebar
         onDeleteChat={handleDeleteChat}
@@ -289,6 +303,7 @@ const ChatPage: React.FC = () => {
       />
 
       <div className="flex-1 flex flex-col">
+        <Navbar/>
         <div className="flex-1 flex flex-col items-center overflow-hidden">
           {showHeader ? (
             <div className="flex-1 flex items-center justify-center w-full max-w-3xl p-4">
@@ -310,26 +325,37 @@ const ChatPage: React.FC = () => {
                           width={40}
                           height={40}
                           className="rounded-full"
-                        />
+                          />
                       </div>
                     )}
                     <div
                       className={`px-3 py-2 rounded-lg ${msg.role === 'user'
                         ? 'bg-green-900 text-white'
-                        : 'bg-[#F9F6EE] text-green-900 shadow-md'
+                        : 'bg-[#F9F6EE] text-green-950 shadow-md'
                         }`}
-                    >
+                        >
                       <Markdown>{msg.role === 'assistant' ? msg.content.replace(/^Human:.*?\n/, '') : msg.content}</Markdown>
                     </div>
                     {msg.role === 'assistant' && (
                       <button
                         onClick={() => toggleBotSpeech(index)}
-                        className="mt-1 p-1  rounded-full bg-gray-200 hover:bg-gray-300"
-                      >
+                        className="mt-1 p-1 rounded-full bg-gray-200 hover:bg-gray-300"
+                        aria-label={isBotSpeechEnabled[index] ? "Disable text-to-speech" : "Enable text-to-speech"}
+                        >
                         {isBotSpeechEnabled[index] ? <Volume2 size={16} /> : <VolumeX size={16} />}
                       </button>
                     )}
                   </div>
+                  {msg.role === 'assistant' && showBreathingExercise && index === messages.length - 1 && (
+                    <div className="mt-4 ml-12">
+                      <BreathingCircle />
+                    </div>
+                  )}
+                  {msg.role === 'assistant' && showMeditation && index === messages.length - 1 && (
+                    <div className="mt-4 ml-12">
+                      <MeditationGif />
+                    </div>
+                  )}
                 </div>
               ))}
 
@@ -342,7 +368,7 @@ const ChatPage: React.FC = () => {
                       width={40}
                       height={40}
                       className="rounded-full"
-                    />
+                      />
                   </div>
                   <div className="max-w-[80%] md:max-w-xl">
                     <Skeleton className="h-4 w-[150px] rounded-lg" />
@@ -356,6 +382,7 @@ const ChatPage: React.FC = () => {
 
         <div className="w-full max-w-3xl mx-auto pb-4 px-4">
           <CrisisButton input={input} />
+          <WomensCrisisButton input={input} />
           <div className="relative">
             <input
               type="text"
@@ -364,17 +391,18 @@ const ChatPage: React.FC = () => {
               onKeyPress={handleKeyPress}
               placeholder="Type your message..."
               className="w-full focus:outline-none focus:placeholder-gray-400 text-black placeholder-gray-400 pl-4 pr-20 py-3 rounded-full bg-white shadow-md"
-            />
+              />
             <div className="absolute right-2 top-1/2 transform -translate-y-1/2 flex items-center space-x-2">
               <VoiceInput
                 onTranscript={handleVoiceTranscript}
                 setIsVoiceInput={setIsVoiceInput}
                 setVoiceInputMessage={setVoiceInputMessage}
-              />
+                />
               <button
                 onClick={() => handleSend()}
                 className="inline-flex items-center justify-center rounded-full p-2 transition duration-500 ease-in-out text-white bg-green-900 hover:bg-green-500 focus:outline-none"
-              >
+                aria-label="Send message"
+                >
                 <Send size={20} />
               </button>
             </div>
@@ -387,6 +415,7 @@ const ChatPage: React.FC = () => {
 
       {error && <p className="text-red-500 mt-2 text-sm">{error}</p>}
     </div>
+          </div>
   );
 };
 

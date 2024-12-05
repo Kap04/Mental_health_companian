@@ -15,7 +15,7 @@ export default function SignUpPage() {
         >
           <header className="text-center">
             
-            <Image src={Logo.src} alt="Logo" className="mx-auto h-20 w-auto" />
+            <Image src={Logo.src} alt="Logo" width={70} height={70} className="mx-auto h-20 w-auto" />
             <h1 className="mt-4 text-xl font-medium tracking-tight text-zinc-200">
               Create an account
             </h1>
