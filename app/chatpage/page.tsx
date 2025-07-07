@@ -17,6 +17,8 @@ import BreathingCircle from "../../components/Breathing-circle"
 import MeditationGif from '@/components/MeditationGif';
 import WomensCrisisButton from '@/components/WomensCrisisButton';
 import Navbar from '@/components/Navbar';
+import { DynamicRetrievalMode } from "@google/generative-ai";
+
 
 const apiKey = process.env.NEXT_PUBLIC_GEMINI_API_KEY || "";
 const genAI = new GoogleGenerativeAI(apiKey);
